@@ -199,7 +199,8 @@ body[data-tema="escuro"] .linha-selecionada td{background:rgba(74,144,217,.15)!i
 
     <div id="loginForm">
       <input type="text" id="loginUser" placeholder="Usuário" autocomplete="username">
-      <input type="password" id="loginPass" placeholder="Senha" autocomplete="current-password" onkeydown="if(event.key==='Enter') fazerLogin()">
+      <input type="password" id="loginPass" placeholder="Senha" autocomplete="current-password"
+             onkeydown="if(event.key==='Enter') fazerLogin()">
       <button onclick="fazerLogin()">🔓 Entrar</button>
       <div class="erro" id="loginErro"></div>
     </div>
@@ -215,7 +216,10 @@ body[data-tema="escuro"] .linha-selecionada td{background:rgba(74,144,217,.15)!i
       <div class="erro" id="setupErro"></div>
     </div>
 
-    <div class="link" id="loginDica" style="display:none" onclick="alert('Peça ao administrador para redefinir sua senha.')">Esqueci minha senha</div>
+    <div class="link" id="loginDica" style="display:none"
+         onclick="alert('Peça ao administrador para redefinir sua senha.')">
+      Esqueci minha senha
+    </div>
   </div>
 </div>
 
@@ -461,7 +465,17 @@ const STORAGE_KEY = "desempenho_escolar_v4";
 const SESSION_KEY = "desempenho_sessao_v4";
 const SESSION_HORAS = 12;
 let charts = {};
-let state = { usuarios: [], config:{ mediaAprov:5.0, mediaRecup:4.0, limiteFaltas:10, ano:2025, escola:"Escola X", metaPorDisciplina:{}, corCustom:null }, tema:"azul", turmaAtiva:"todas", disciplinaFiltro:"todas", turmas:[], alunos:[], notas:[], historico:[] };
+let state = {
+  usuarios: [],
+  config:{ mediaAprov:5.0, mediaRecup:4.0, limiteFaltas:10, ano:2025, escola:"Escola X", metaPorDisciplina:{}, corCustom:null },
+  tema:"azul",
+  turmaAtiva:"todas",
+  disciplinaFiltro:"todas",
+  turmas:[],
+  alunos:[],
+  notas:[],
+  historico:[]
+};
 let sessao = null;
 let alunosSelecionados = new Set();
 
@@ -481,11 +495,16 @@ async function hashSenha(s){
 
 function capitalizarNome(nome){
   const minusculas = ["de","da","do","das","dos","e","di","du","del"];
-  return String(nome || "").trim().replace(/\s+/g, " ").split(" ").map((palavra, i) => {
-    const lower = palavra.toLowerCase();
-    if(i > 0 && minusculas.includes(lower)) return lower;
-    return lower.charAt(0).toUpperCase() + lower.slice(1);
-  }).join(" ");
+  return String(nome || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .split(" ")
+    .map((palavra, i) => {
+      const lower = palavra.toLowerCase();
+      if(i > 0 && minusculas.includes(lower)) return lower;
+      return lower.charAt(0).toUpperCase() + lower.slice(1);
+    })
+    .join(" ");
 }
 
 function garantir(){
@@ -495,11 +514,25 @@ function garantir(){
   if(!state.disciplinaFiltro) state.disciplinaFiltro = "todas";
   if(!state.historico) state.historico = [];
   if(!state.config.metaPorDisciplina) state.config.metaPorDisciplina = {};
-  DISCIPLINAS.forEach(d=>{ if(state.config.metaPorDisciplina[d] === undefined) state.config.metaPorDisciplina[d] = state.config.mediaAprov; });
+  DISCIPLINAS.forEach(d=>{
+    if(state.config.metaPorDisciplina[d] === undefined)
+      state.config.metaPorDisciplina[d] = state.config.mediaAprov;
+  });
   if(state.config.limiteFaltas === undefined) state.config.limiteFaltas = 10;
+  state.turmas.forEach(t=>{ if(t.professorId === undefined) t.professorId = null; });
+  state.alunos.forEach(a=>{ if(!a.comentarios) a.comentarios = {b1:"",b2:"",b3:"",b4:""}; });
+  state.notas.forEach(n=>{
+    if(n.comportamento === undefined) n.comportamento = null;
+    if(n.habilidade === undefined) n.habilidade = "";
+  });
 }
 
-function salvar(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function gerarDadosIniciais(){
+  state.turmas = [];
+  state.alunos = [];
+  state.notas = [];
+  salvar();
+}
 
 function mostrarTelaLogin(){
   document.getElementById("loginScreen").style.display = "flex";
@@ -507,6 +540,7 @@ function mostrarTelaLogin(){
   document.getElementById("setupForm").style.display = "none";
   document.getElementById("loginDica").style.display = "block";
   document.getElementById("app").style.display = "none";
+  setTimeout(()=>document.getElementById("loginUser").focus(), 100);
 }
 function mostrarTelaSetup(){
   document.getElementById("loginScreen").style.display = "flex";
@@ -514,6 +548,7 @@ function mostrarTelaSetup(){
   document.getElementById("setupForm").style.display = "block";
   document.getElementById("loginDica").style.display = "none";
   document.getElementById("app").style.display = "none";
+  setTimeout(()=>document.getElementById("setupNome").focus(), 100);
 }
 function esconderLogin(){ document.getElementById("loginScreen").style.display = "none"; }
 
@@ -523,14 +558,33 @@ async function criarAdmin(){
   const pass = document.getElementById("setupPass").value;
   const pass2 = document.getElementById("setupPass2").value;
   const erro = document.getElementById("setupErro");
+
   if(!nome){ erro.textContent = "Digite seu nome."; return; }
   if(!user || user.length < 3){ erro.textContent = "Usuário precisa ter 3+ caracteres."; return; }
   if(pass.length < 4){ erro.textContent = "Senha precisa ter 4+ caracteres."; return; }
   if(pass !== pass2){ erro.textContent = "As senhas não coincidem."; return; }
+
   const senhaHash = await hashSenha(pass);
-  state.usuarios.push({ id:1, nome:capitalizarNome(nome), login:user, senhaHash, role:"admin", criadoEm:new Date().toISOString() });
-  state.turmas = [{ id:1, nome:"7º Ano A", professorId:1 }, { id:2, nome:"7º Ano B", professorId:1 }];
-  state.alunos = []; state.notas = []; salvar(); sessao = { userId:1 }; salvarSessao(); await entrarNoApp();
+  state.usuarios.push({
+    id: 1,
+    nome: capitalizarNome(nome),
+    login: user,
+    senhaHash,
+    role: "admin",
+    criadoEm: new Date().toISOString()
+  });
+
+  state.turmas = [
+    { id: 1, nome: "7º Ano A", professorId: 1 },
+    { id: 2, nome: "7º Ano B", professorId: 1 }
+  ];
+  state.alunos = [];
+  state.notas = [];
+
+  salvar();
+  sessao = { userId: 1 };
+  salvarSessao();
+  await entrarNoApp();
 }
 
 async function fazerLogin(){
@@ -543,18 +597,22 @@ async function fazerLogin(){
   if(!u){ erro.textContent = "Usuário não encontrado."; return; }
   const h = await hashSenha(pass);
   if(h !== u.senhaHash){ erro.textContent = "Senha incorreta."; return; }
-  sessao = { userId: u.id }; salvarSessao(); await entrarNoApp();
+  sessao = { userId: u.id };
+  salvarSessao();
+  await entrarNoApp();
 }
 
 function salvarSessao(){
   if(!sessao) return;
-  const exp = Date.now() + SESSION_HORAS * 3600 * 1000;
-  localStorage.setItem(SESSION_KEY, JSON.stringify({ userId: sessao.userId, expira: exp }));
+  const exp = Date.now() + SESSION_HORAS*3600*1000;
+  localStorage.setItem(SESSION_KEY, JSON.stringify({userId: sessao.userId, expira: exp}));
 }
 
 function fazerLogout(){
   if(!confirm("Deseja sair?")) return;
-  sessao = null; localStorage.removeItem(SESSION_KEY);
+  sessao = null;
+  localStorage.removeItem(SESSION_KEY);
+  alunosSelecionados.clear();
   document.getElementById("app").style.display = "none";
   document.getElementById("loginUser").value = "";
   document.getElementById("loginPass").value = "";
@@ -565,6 +623,7 @@ function fazerLogout(){
 async function entrarNoApp(){
   esconderLogin();
   document.getElementById("app").style.display = "block";
+  alunosSelecionados.clear();
   aplicarTema(state.tema);
   montarTemas();
   carregarConfigUI();
@@ -578,21 +637,55 @@ async function entrarNoApp(){
   atualizarSubInfo();
 }
 
-function usuarioLogado(){ if(!sessao) return null; return state.usuarios.find(u=>u.id === sessao.userId); }
-function ehAdmin(){ const u = usuarioLogado(); return !!u && u.role === "admin"; }
+function usuarioLogado(){
+  if(!sessao) return null;
+  return state.usuarios.find(u=>u.id === sessao.userId);
+}
+function ehAdmin(){
+  const u = usuarioLogado();
+  return !!u && u.role === "admin";
+}
 function atualizarUserBadge(){
   const u = usuarioLogado();
   if(!u) return;
   const iniciais = u.nome.split(" ").map(p=>p[0]).slice(0,2).join("").toUpperCase();
-  document.getElementById("userBadge").innerHTML = `<div class="avatar">${iniciais}</div><div><strong>${u.nome}</strong><div class="role">${u.role === "admin" ? "👑 Admin" : "👨‍🏫 Professor"}</div></div>`;
+  document.getElementById("userBadge").innerHTML = `
+    <div class="avatar">${iniciais}</div>
+    <div>
+      <strong>${u.nome}</strong>
+      <div class="role">${u.role === "admin" ? "👑 Admin" : "👨‍🏫 Professor"}</div>
+    </div>
+  `;
 }
 function atualizarTabUsuarios(){
   document.getElementById("tabUsuarios").style.display = ehAdmin() ? "" : "none";
   document.getElementById("cardNovaTurma").style.display = ehAdmin() ? "block" : "none";
 }
 
-function turmasVisiveis(){ const u = usuarioLogado(); if(!u) return []; if(u.role === "admin") return state.turmas; return state.turmas.filter(t => t.professorId === u.id); }
-function alunosVisiveis(){ const tids = new Set(turmasVisiveis().map(t=>t.id)); let lista; if(state.turmaAtiva === "todas") lista = state.alunos.filter(a => tids.has(a.turmaId)); else if(!tids.has(state.turmaAtiva)) lista = []; else lista = state.alunos.filter(a => a.turmaId === state.turmaAtiva); return lista.slice().sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR',{sensitivity:'base'})); }
+function turmasVisiveis(){
+  const u = usuarioLogado();
+  if(!u) return [];
+  if(u.role === "admin") return state.turmas;
+  return state.turmas.filter(t => t.professorId === u.id);
+}
+function possoVerTurma(turmaId){
+  return turmasVisiveis().some(t => t.id === turmaId);
+}
+function alunosVisiveis(){
+  const tids = new Set(turmasVisiveis().map(t=>t.id));
+  let lista;
+  if(state.turmaAtiva === "todas"){
+    lista = state.alunos.filter(a => tids.has(a.turmaId));
+  } else if(!tids.has(state.turmaAtiva)){
+    lista = [];
+  } else {
+    lista = state.alunos.filter(a => a.turmaId === state.turmaAtiva);
+  }
+  return lista.slice().sort((a, b) =>
+    a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' })
+  );
+}
+
 function getTurma(id){ return state.turmas.find(t=>t.id===id); }
 function getUsuario(id){ return state.usuarios.find(u=>u.id===id); }
 function alunosDaTurma(id){ return state.alunos.filter(a=>a.turmaId===id); }
@@ -607,91 +700,1398 @@ function mediaAluno(id){
   if(!ms.length) return null;
   return Math.round((ms.reduce((s,m)=>s+m,0)/ms.length)*10)/10;
 }
-function mediaAlunoDisc(id, disc){ const n = state.notas.find(x=>x.alunoId===id && x.disciplina===disc); return n ? mediaNota(n) : null; }
-function mediaDisciplina(disc, alunos){ const ids = new Set(alunos.map(a=>a.id)); const ns = state.notas.filter(n=>n.disciplina===disc && ids.has(n.alunoId)); const ms = ns.map(mediaNota).filter(m=>m!==null); if(!ms.length) return null; return Math.round((ms.reduce((s,m)=>s+m,0)/ms.length)*10)/10; }
-function mediaBimestre(bim, alunos){ const ids = new Set(alunos.map(a=>a.id)); const vals = state.notas.filter(n=>ids.has(n.alunoId) && (state.disciplinaFiltro === "todas" || n.disciplina === state.disciplinaFiltro)).map(n=>n[bim]).filter(v=>v!==null&&v!==""&&!isNaN(v)); if(!vals.length) return null; return Math.round((vals.reduce((s,v)=>s+v,0)/vals.length)*10)/10; }
-function totalFaltasAluno(id){ return state.notas.filter(n=>n.alunoId===id).reduce((s,n)=>s+(n.faltas||0),0); }
-function situacao(m){ if(m===null) return "vazio"; if(m>=state.config.mediaAprov) return "aprovado"; if(m>=state.config.mediaRecup) return "recuperacao"; return "reprovado"; }
-function textoSituacao(s){ return {aprovado:"✅ Aprovado",recuperacao:"⚠️ Recuperação",reprovado:"❌ Reprovado",vazio:"—"}[s]; }
-function fmt(v){ return v===null||v===undefined?"—":Number(v).toFixed(1); }
+function mediaAlunoDisc(id, disc){
+  const n = state.notas.find(x=>x.alunoId===id && x.disciplina===disc);
+  return n ? mediaNota(n) : null;
+}
+function mediaDisciplina(disc, alunos){
+  const ids = new Set(alunos.map(a=>a.id));
+  const ns = state.notas.filter(n=>n.disciplina===disc && ids.has(n.alunoId));
+  const ms = ns.map(mediaNota).filter(m=>m!==null);
+  if(!ms.length) return null;
+  return Math.round((ms.reduce((s,m)=>s+m,0)/ms.length)*10)/10;
+}
+function mediaBimestre(bim, alunos){
+  const ids = new Set(alunos.map(a=>a.id));
+  const vals = state.notas.filter(n=>ids.has(n.alunoId) &&
+    (state.disciplinaFiltro==="todas" || n.disciplina===state.disciplinaFiltro))
+    .map(n=>n[bim]).filter(v=>v!==null&&v!==""&&!isNaN(v));
+  if(!vals.length) return null;
+  return Math.round((vals.reduce((s,v)=>s+v,0)/vals.length)*10)/10;
+}
+function totalFaltasAluno(id){
+  return state.notas.filter(n=>n.alunoId===id).reduce((s,n)=>s+(n.faltas||0),0);
+}
+function situacao(m){
+  if(m===null) return "vazio";
+  if(m>=state.config.mediaAprov) return "aprovado";
+  if(m>=state.config.mediaRecup) return "recuperacao";
+  return "reprovado";
+}
+function textoSituacao(s){
+  return {aprovado:"✅ Aprovado",recuperacao:"⚠️ Recuperação",
+          reprovado:"❌ Reprovado",vazio:"—"}[s];
+}
+function corSituacao(s){
+  return s==="aprovado"?"#2fa84f":s==="recuperacao"?"#d99a00":s==="reprovado"?"#d9534f":"#7a8899";
+}
 function cssVar(n){ return getComputedStyle(document.body).getPropertyValue(n).trim(); }
-function hexToRGBA(hex,a){ hex = hex.replace('#',''); if(hex.length===3) hex = hex.split('').map(c=>c+c).join(''); const r = parseInt(hex.substr(0,2),16), g = parseInt(hex.substr(2,2),16), b = parseInt(hex.substr(4,2),16); return `rgba(${r},${g},${b},${a})`; }
+function hexToRGBA(hex,a){
+  hex = hex.replace('#','');
+  if(hex.length===3) hex = hex.split('').map(c=>c+c).join('');
+  const r = parseInt(hex.substr(0,2),16), g = parseInt(hex.substr(2,2),16), b = parseInt(hex.substr(4,2),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+function fmt(v){ return v===null||v===undefined?"—":Number(v).toFixed(1); }
 
-function logAlteracao(alunoId, disciplina, campo, antes, depois){ const aluno = state.alunos.find(a=>a.id === alunoId); if(!aluno) return; const u = usuarioLogado(); state.historico.unshift({ data:new Date().toISOString(), usuarioNome:u ? u.nome : "—", alunoId, alunoNome:aluno.nome, disciplina, campo, antes: antes ?? "—", depois: depois ?? "—" }); if(state.historico.length > 500) state.historico = state.historico.slice(0,500); }
+function salvar(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 
-function carregarFiltroDisc(){ const sel = document.getElementById('selFiltroDisc'); sel.innerHTML = `<option value="todas">Todas as disciplinas</option>` + DISCIPLINAS.map(d=>`<option value="${d}">${d}</option>`).join(""); sel.value = state.disciplinaFiltro; }
-function mudarFiltroDisciplina(v){ state.disciplinaFiltro = v; salvar(); renderKPIs(); renderDestaques(); renderGraficos(); renderRanking(); }
-function carregarSelectTurmaAtiva(){ const sel = document.getElementById('selTurmaAtiva'); const visiveis = turmasVisiveis(); sel.innerHTML = `<option value="todas">🌐 Todas as minhas turmas (${alunosVisiveis().length} alunos)</option>`; visiveis.forEach(t=>{ const qtd = alunosDaTurma(t.id).length; sel.innerHTML += `<option value="${t.id}">${t.nome} (${qtd})</option>`; }); if(state.turmaAtiva !== "todas" && !visiveis.some(t=>t.id===state.turmaAtiva)) state.turmaAtiva = "todas"; sel.value = state.turmaAtiva; }
-function mudarTurmaAtiva(v){ state.turmaAtiva = v === "todas" ? "todas" : parseInt(v); alunosSelecionados.clear(); salvar(); carregarSelectAluno(); carregarFiltrosHistorico(); renderTudo(); atualizarSubInfo(); }
-function carregarSelectAluno(){ const sel = document.getElementById('selAlunoLanc'); const visiveis = alunosVisiveis(); if(!sel) return; sel.innerHTML = ""; if(!visiveis.length){ sel.innerHTML = `<option value="">Nenhum aluno</option>`; return; } visiveis.forEach(a=>{ const opt = document.createElement('option'); opt.value = a.id; opt.textContent = `${a.nome} — ${getTurma(a.turmaId)?.nome||"?"}`; sel.appendChild(opt); }); }
-function renderTudo(){ carregarSelectProfessorTurma(); renderKPIs(); renderDestaques(); renderRanking(); renderLancamentos(); renderAlunos(); renderTurmas(); carregarSelectNovaTurma(); if(document.getElementById('dashboard').classList.contains('ativa')) renderGraficos(); }
-function renderKPIs(){ const visiveis = alunosVisiveis(); const medias = visiveis.map(a=>mediaAluno(a.id)).filter(m=>m!==null); const mediaTurma = medias.length ? medias.reduce((s,m)=>s+m,0)/medias.length : 0; const sit = visiveis.map(a=>situacao(mediaAluno(a.id))); const total = sit.length || 1; const aprov = sit.filter(s=>s === "aprovado").length; const recup = sit.filter(s=>s === "recuperacao").length; const reprov = sit.filter(s=>s === "reprovado").length; const alertaFaltas = visiveis.filter(a=>totalFaltasAluno(a.id) > state.config.limiteFaltas).length; const u = usuarioLogado(); const rotulo = state.turmaAtiva === "todas" ? (u.role === "admin" ? "Todas as Turmas" : "Minhas Turmas") : (getTurma(state.turmaAtiva)?.nome || ""); document.getElementById('kpis').innerHTML = `...` }
-function renderDestaques(){ const visiveis = alunosVisiveis(); if(!visiveis.length){ document.getElementById('destaques').innerHTML = ""; return; } let topAluno = null, topMedia = -1; let evoluiu = null, evolucao = -Infinity; let maisFaltas = null, faltasMax = -1; visiveis.forEach(a=>{ const m=mediaAluno(a.id); if(m !== null && m > topMedia){ topMedia = m; topAluno = a; } const ns = state.notas.filter(n=>n.alunoId === a.id); const b1s = ns.map(n=>n.b1).filter(v=>v!==null&&v!==""&&!isNaN(v)); const b4s = ns.map(n=>n.b4).filter(v=>v!==null&&v!==""&&!isNaN(v)); if(b1s.length && b4s.length){ const mB1 = b1s.reduce((s,v)=>s+v,0)/b1s.length; const mB4 = b4s.reduce((s,v)=>s+v,0)/b4s.length; const dif = mB4 - mB1; if(dif > evolucao){ evolucao = dif; evoluiu = { aluno:a, dif }; } } const f = totalFaltasAluno(a.id); if(f > faltasMax){ faltasMax = f; maisFaltas = a; } }); const cards = []; if(topAluno) cards.push(`<div class="destaque"><div class="icone">🥇</div><div><div class="titulo">Top Aluno</div><div class="nome">${topAluno.nome}</div><div class="detalhe">Média: ${topMedia.toFixed(1)}</div></div></div>`); if(evoluiu && evolucao > 0) cards.push(`<div class="destaque"><div class="icone">📈</div><div><div class="titulo">Maior Evolução</div><div class="nome">${evoluiu.aluno.nome}</div><div class="detalhe">+${evoluiu.dif.toFixed(1)} do 1º ao 4º</div></div></div>`); if(maisFaltas && faltasMax > 0) cards.push(`<div class="destaque"><div class="icone">⚠️</div><div><div class="titulo">Mais Faltas</div><div class="nome">${maisFaltas.nome}</div><div class="detalhe">${faltasMax} faltas</div></div></div>`); document.getElementById('destaques').innerHTML = cards.join(""); }
-function renderRanking(){ const visiveis = alunosVisiveis(); const dados = visiveis.map(a=>({ nome:a.nome, turma:getTurma(a.turmaId)?.nome||"", media: mediaAluno(a.id), id: a.id })).filter(d=>d.media !== null).sort((a,b)=>b.media-a.media); const tbody = document.querySelector('#tabelaRanking tbody'); if(!dados.length){ tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--txt2)">Sem dados.</td></tr>'; return; } tbody.innerHTML = dados.map((d,i)=>{ const s = situacao(d.media); const medalha = i===0?"🥇":i===1?"🥈":i===2?"🥉":`${i+1}º`; const bateuTodas = DISCIPLINAS.every(disc=>{ const m = mediaAlunoDisc(d.id, disc); const meta = state.config.metaPorDisciplina[disc] ?? state.config.mediaAprov; return m === null || m >= meta; }); return `<tr><td><strong>${medalha}</strong></td><td>${d.nome}</td><td><span style="font-size:11px;color:var(--txt2)">${d.turma}</span></td><td><strong>${d.media.toFixed(1)}</strong></td><td>${bateuTodas?`<span class="badge meta">✓</span>`:`<span class="badge alerta">✗</span>`}</td><td><span class="badge ${s}">${textoSituacao(s)}</span></td></tr>`; }).join(""); }
-function renderGraficos(){ const visiveis = alunosVisiveis(); const txtCor = cssVar("--txt"), txt2Cor = cssVar("--txt2"); const primaria = cssVar("--p"), gridCor = cssVar("--borda"); const cardCor = cssVar("--card"); const fDisc = state.disciplinaFiltro; const ordenados = visiveis.map(a=>({ nome:a.nome, media: fDisc === "todas" ? mediaAluno(a.id) : mediaAlunoDisc(a.id,fDisc) })).sort((a,b)=>(b.media??0)-(a.media??0)); const labelsA = ordenados.map(a=>a.nome.split(" ")[0]+" "+(a.nome.split(" ")[1]||"")); const valoresA = ordenados.map(a=>a.media??0); const coresA = valoresA.map(v=>situacao(v)==="aprovado"?"#2fa84f":situacao(v)==="recuperacao"?"#d99a00":"#d9534f"); if(document.getElementById('chartAlunos')){ if(charts.chartAlunos) charts.chartAlunos.destroy(); const ctx = document.getElementById('chartAlunos').getContext('2d'); charts.chartAlunos = new Chart(ctx,{ type:'bar', data:{ labels:labelsA, datasets:[{ label:'Média', data:valoresA, backgroundColor:coresA, borderRadius:4, borderSkipped:false }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:{ callbacks:{ title:i=>ordenados[i[0].dataIndex].nome, label:c=>`Média: ${c.parsed.y.toFixed(1)}` } } }, scales:{ y:{ beginAtZero:true, max:10, ticks:{ color:txt2Cor }, grid:{ color:gridCor } }, x:{ ticks:{ autoSkip:true, maxRotation:90, minRotation:60, font:{ size:10 }, color:txt2Cor }, grid:{ display:false } } } }); }
- const cardDisc = document.getElementById('cardDisc'); if(fDisc === 'todas'){ cardDisc.style.display = 'block'; const mediasD = DISCIPLINAS.map(d=>mediaDisciplina(d,visiveis)??0); const coresD = mediasD.map(v=>situacao(v)==='aprovado'?'#2fa84f':situacao(v)==='recuperacao'?'#d99a00':'#d9534f'); if(charts.chartDisciplinas) charts.chartDisciplinas.destroy(); const ctx2 = document.getElementById('chartDisciplinas').getContext('2d'); charts.chartDisciplinas = new Chart(ctx2,{ type:'bar', data:{ labels:DISCIPLINAS, datasets:[{ label:'Média', data:mediasD, backgroundColor:coresD, borderRadius:4 }] }, options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ x:{ beginAtZero:true, max:10, ticks:{ color:txt2Cor }, grid:{ color:gridCor } }, y:{ ticks:{ color:txt2Cor }, grid:{ display:false } } } }); } else { cardDisc.style.display = 'none'; }
- const sitC = {aprovado:0,recuperacao:0,reprovado:0}; visiveis.forEach(a=>{ const m = fDisc === "todas" ? mediaAluno(a.id) : mediaAlunoDisc(a.id,fDisc); const s = situacao(m); if(sitC[s] !== undefined) sitC[s]++; }); if(charts.chartSituacao) charts.chartSituacao.destroy(); const ctx3 = document.getElementById('chartSituacao').getContext('2d'); charts.chartSituacao = new Chart(ctx3,{ type:'doughnut', data:{ labels:['Aprovados','Recuperação','Reprovados'], datasets:[{ data:[sitC.aprovado,sitC.recuperacao,sitC.reprovado], backgroundColor:['#2fa84f','#e6b800','#d9534f'], borderWidth:2, borderColor:cardCor }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ color:txtCor } } } } });
- const bimData = BIMESTRES.map(b=>mediaBimestre(b,visiveis)); if(charts.chartEvolucao) charts.chartEvolucao.destroy(); const ctx4 = document.getElementById('chartEvolucao').getContext('2d'); charts.chartEvolucao = new Chart(ctx4,{ type:'line', data:{ labels:['1º Bim','2º Bim','3º Bim','4º Bim'], datasets:[{ label:'Média', data:bimData, borderColor:primaria, backgroundColor:hexToRGBA(primaria,.15), fill:true, tension:0.35, pointRadius:6, pointBackgroundColor:primaria, borderWidth:3 }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:false, min:0, max:10, ticks:{ color:txt2Cor }, grid:{ color:gridCor } }, x:{ ticks:{ color:txt2Cor }, grid:{ display:false } } } });
- const cardComp = document.getElementById('cardComparativo'); const turmasVis = turmasVisiveis(); if(state.turmaAtiva === 'todas' && turmasVis.length > 1){ cardComp.style.display = 'block'; const discExibir = fDisc === 'todas' ? DISCIPLINAS : [fDisc]; const cores = ['#1f4e78','#2fa84f','#a32662','#b8560a','#5a2d82','#0a9c9c']; if(charts.chartComparativo) charts.chartComparativo.destroy(); const ctx5 = document.getElementById('chartComparativo').getContext('2d'); charts.chartComparativo = new Chart(ctx5,{ type:'bar', data:{ labels:discExibir, datasets: turmasVis.map((t,i)=>({ label:t.nome, data: discExibir.map(d=>mediaDisciplina(d,alunosDaTurma(t.id))??0), backgroundColor: cores[i % cores.length], borderRadius:3 })) }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ color:txtCor } } }, scales:{ y:{ beginAtZero:true, max:10, ticks:{ color:txt2Cor }, grid:{ color:gridCor } }, x:{ ticks:{ color:txt2Cor, autoSkip:false, maxRotation:45 }, grid:{ display:false } } } }); } else { cardComp.style.display = 'none'; }
+function resetarDados(){
+  if(!confirm("Isso apagará TODOS os dados (incluindo usuários). Continuar?")) return;
+  if(!confirm("Tem CERTEZA? Essa ação não pode ser desfeita.")) return;
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(SESSION_KEY);
+  location.reload();
 }
 
-function renderLancamentos(){ const alunoId = parseInt(document.getElementById('selAlunoLanc').value); const tbody = document.querySelector('#tabelaLancamentos tbody'); const comentarios = document.getElementById('comentariosGrid'); if(!alunoId){ tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:30px;color:var(--txt2)">Selecione um aluno.</td></tr>'; return; } const aluno = state.alunos.find(a=>a.id === alunoId); if(!aluno || !possoVerTurma(aluno.turmaId)){ tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:30px;color:var(--txt2)">Sem permissão.</td></tr>'; return; } tbody.innerHTML = ""; comentarios.innerHTML = ""; DISCIPLINAS.forEach(disc=>{ const nota = state.notas.find(n=>n.alunoId===alunoId && n.disciplina===disc); if(!nota) return; const media = mediaNota(nota); const sit = situacao(media); const meta = state.config.metaPorDisciplina[disc] ?? state.config.mediaAprov; const bateuMeta = media !== null && media >= meta; const tr = document.createElement('tr'); tr.innerHTML = `<td><strong>${disc}</strong></td>${BIMESTRES.map(campo => `<td><input type="number" min="0" max="10" step="0.1" class="nota" value="${nota[campo] ?? ''}" onchange="atualizarNota(${alunoId},'${disc}','${campo}',this.value)"></td>`).join('')}<td style="text-align:center;white-space:nowrap;"><strong style="color:${corSituacao(sit)}">${fmt(media)}</strong></td><td style="text-align:center;"><span class="badge ${bateuMeta?'meta':'alerta'}" style="font-size:10px;">${meta.toFixed(1)}${bateuMeta?' ✓':' ✗'}</span></td><td><span class="badge ${sit}">${textoSituacao(sit)}</span></td><td><input type="number" min="0" step="1" class="nota" style="width:55px;" value="${nota.faltas ?? 0}" onchange="atualizarFalta(${alunoId},'${disc}',this.value)"></td><td><input type="number" min="0" max="10" step="0.1" class="nota" value="${nota.comportamento ?? ''}" onchange="atualizarComportamento(${alunoId},'${disc}',this.value)"></td><td><input type="text" value="${nota.habilidade||''}" placeholder="Ex: EF07MA01" style="min-width:120px;font-size:12px;" onchange="atualizarHabilidade(${alunoId},'${disc}',this.value)"></td>`; tbody.appendChild(tr); }); comentarios.innerHTML = BIMESTRES.map(b=>`<label>${BIM_LABEL[b]}<textarea rows="3" placeholder="Observações..." onchange="atualizarComentario(${alunoId},'${b}',this.value)">${aluno.comentarios[b]||''}</textarea></label>`).join(""); }
-function corSituacao(s){ return s === "aprovado" ? "#2fa84f" : s === "recuperacao" ? "#d99a00" : s === "reprovado" ? "#d9534f" : "#7a8899"; }
-function atualizarNota(alunoId, disc, campo, valor){ const nota = state.notas.find(n=>n.alunoId===alunoId && n.disciplina===disc); if(!nota) return; let v = parseFloat(valor); if(valor === "" || isNaN(v)) v = null; else v = Math.max(0, Math.min(10, v)); const antes = nota[campo]; nota[campo] = v; logAlteracao(alunoId, disc, BIM_LABEL[campo], antes, v); salvar(); renderLancamentos(); if(document.getElementById('dashboard').classList.contains('ativa')) renderKPIs(); renderDestaques(); renderRanking(); renderGraficos(); }
-function atualizarFalta(alunoId, disc, valor){ const nota = state.notas.find(n=>n.alunoId===alunoId && n.disciplina===disc); if(!nota) return; const antes = nota.faltas; nota.faltas = Math.max(0, parseInt(valor) || 0); logAlteracao(alunoId, disc, 'Faltas', antes, nota.faltas); salvar(); }
-function atualizarComportamento(alunoId, disc, valor){ const nota = state.notas.find(n=>n.alunoId===alunoId && n.disciplina===disc); if(!nota) return; let v = parseFloat(valor); if(valor === "" || isNaN(v)) v = null; else v = Math.max(0, Math.min(10, v)); const antes = nota.comportamento; nota.comportamento = v; logAlteracao(alunoId, disc, 'Comportamento', antes, v); salvar(); }
-function atualizarHabilidade(alunoId, disc, valor){ const nota = state.notas.find(n=>n.alunoId===alunoId && n.disciplina===disc); if(!nota) return; const antes = nota.habilidade; nota.habilidade = valor; logAlteracao(alunoId, disc, 'BNCC', antes, valor); salvar(); }
-function atualizarComentario(alunoId, bim, valor){ const aluno = state.alunos.find(a=>a.id===alunoId); if(!aluno) return; const antes = aluno.comentarios[bim]; aluno.comentarios[bim] = valor; logAlteracao(alunoId, '—', 'Comentário ' + BIM_LABEL[bim], antes, valor); salvar(); }
+function exportarBackup(){
+  const data = JSON.stringify(state, null, 2);
+  const blob = new Blob([data], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `backup_desempenho_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+function importarBackup(ev){
+  const file = ev.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try{
+      const dados = JSON.parse(e.target.result);
+      if(!dados.alunos || !dados.notas){ alert("Arquivo inválido."); return; }
+      if(!confirm("Isso substituirá TODOS os dados atuais. Continuar?")) return;
+      state = Object.assign(state, dados);
+      garantir();
+      salvar();
+      location.reload();
+    }catch(err){ alert("Erro: "+err.message); }
+  };
+  reader.readAsText(file);
+}
 
-function renderAlunos(){ const termo = (document.getElementById('buscaAluno')?.value || '').toLowerCase().trim(); const visiveis = alunosVisiveis().filter(a => !termo || a.nome.toLowerCase().includes(termo)); const tbody = document.querySelector('#tabelaAlunos tbody'); const admin = ehAdmin(); const barra = document.getElementById('barraAcoesAlunos'); if(barra){ if(admin){ barra.style.display = 'flex'; barra.innerHTML = `<button class="btn" onclick="excluirSelecionados()" style="background:#d9534f;">🗑️ Excluir selecionados (${alunosSelecionados.size})</button><button class="btn secundario" onclick="alunosSelecionados.clear(); renderAlunos();">Limpar seleção</button>`; } else { barra.style.display = 'none'; } }
- if(!visiveis.length){ tbody.innerHTML = `<tr><td colspan="${admin ? 8 : 7}" style="text-align:center;padding:30px;color:var(--txt2)">${state.alunos.length === 0 ? 'Nenhum aluno cadastrado ainda. Use o formulário acima para adicionar.' : 'Nenhum aluno encontrado.'}</td></tr>`; return; } const turmasDisp = turmasVisiveis(); const todosMarcados = visiveis.every(a => alunosSelecionados.has(a.id)); tbody.innerHTML = visiveis.map((a,i)=>{ const media = mediaAluno(a.id); const sit = situacao(media); const faltas = totalFaltasAluno(a.id); const alertaFalta = faltas > state.config.limiteFaltas; const marcado = alunosSelecionados.has(a.id); return `<tr class="${alertaFalta ? 'linha-alerta' : ''} ${marcado ? 'linha-selecionada' : ''}">${admin ? `<td style="text-align:center;"><input type="checkbox" style="width:18px;height:18px;cursor:pointer;" ${marcado ? 'checked' : ''} onchange="toggleSelecaoAluno(${a.id})"></td>` : ''}<td>${i+1}</td><td>${admin ? `<input type="text" value="${a.nome}" onchange="renomearAluno(${a.id},this.value)">` : `<strong>${a.nome}</strong>`}</td><td>${admin ? `<select onchange="moverAluno(${a.id},this.value)">${turmasDisp.map(t=>`<option value="${t.id}" ${t.id===a.turmaId?'selected':''}>${t.nome}</option>`).join('')}</select>` : getTurma(a.turmaId)?.nome || '—'}</td><td><strong>${fmt(media)}</strong></td><td>${alertaFalta?`<span class="badge alerta">⚠️ ${faltas}</span>`:faltas}</td><td><span class="badge ${sit}">${textoSituacao(sit)}</span></td><td style="white-space:nowrap;"><button class="btn secundario mini" onclick="verLancamentos(${a.id})">📝</button><button class="btn mini" onclick="abrirBoletim(${a.id})">📄</button>${admin ? `<button class="btn perigo mini" onclick="removerAluno(${a.id})">🗑️</button>` : ''}</td></tr>`; }).join(""); const thead = document.querySelector('#tabelaAlunos thead tr'); if(admin){ if(!thead.querySelector('.col-check')){ const thCheck = document.createElement('th'); thCheck.className = 'col-check'; thCheck.style.textAlign = 'center'; thCheck.style.width = '40px'; thCheck.innerHTML = `<input type="checkbox" id="checkTodos" style="width:16px;height:16px;cursor:pointer;" onchange="toggleSelecionarTodos(this.checked)">`; thead.insertBefore(thCheck, thead.firstChild); } const ct = document.getElementById('checkTodos'); if(ct) ct.checked = todosMarcados && visiveis.length > 0; } else { const th = thead.querySelector('.col-check'); if(th) th.remove(); } }
-function toggleSelecaoAluno(id){ if(alunosSelecionados.has(id)) alunosSelecionados.delete(id); else alunosSelecionados.add(id); renderAlunos(); }
-function toggleSelecionarTodos(checked){ const termo = (document.getElementById('buscaAluno')?.value || '').toLowerCase().trim(); const visiveis = alunosVisiveis().filter(a => !termo || a.nome.toLowerCase().includes(termo)); if(checked) visiveis.forEach(a => alunosSelecionados.add(a.id)); else visiveis.forEach(a => alunosSelecionados.delete(a.id)); renderAlunos(); }
-function excluirSelecionados(){ if(!ehAdmin()){ alert('🔒 Apenas administradores podem excluir alunos.'); return; } if(!alunosSelecionados.size){ alert('Nenhum aluno selecionado.'); return; } const qtd = alunosSelecionados.size; if(!confirm(`Excluir ${qtd} aluno(s) selecionado(s)?\n\nTodas as notas e comentários serão apagados.\nEsta ação não pode ser desfeita.`)) return; state.alunos = state.alunos.filter(a => !alunosSelecionados.has(a.id)); state.notas = state.notas.filter(n => !alunosSelecionados.has(n.alunoId)); alunosSelecionados.clear(); salvar(); carregarSelectTurmaAtiva(); carregarSelectAluno(); carregarFiltrosHistorico(); renderTudo(); alert(`✅ ${qtd} aluno(s) excluído(s).`); }
-function verLancamentos(alunoId){ document.querySelector("nav button[data-tab='lancamentos']").click(); document.getElementById('buscaAlunoLanc').value = ''; carregarSelectAluno(); document.getElementById('selAlunoLanc').value = alunoId; renderLancamentos(); }
+function mudarAba(btn){
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('ativo'));
+  btn.classList.add('ativo');
+  document.querySelectorAll('.aba').forEach(a=>a.classList.remove('ativa'));
+  document.getElementById(btn.dataset.tab).classList.add('ativa');
+  if(btn.dataset.tab === "dashboard") setTimeout(renderGraficos, 50);
+  if(btn.dataset.tab === "historico") renderHistorico();
+  if(btn.dataset.tab === "usuarios") renderUsuarios();
+}
 
-function adicionarAluno(){ const inputNome = document.getElementById('novoAlunoNome'); const selTurma = document.getElementById('novoAlunoTurma'); const nome = capitalizarNome(inputNome.value); const turmaId = parseInt(selTurma.value); if(!nome){ alert('Digite o nome.'); return; } if(!turmaId || !getTurma(turmaId)){ alert('Selecione turma.'); return; } if(!possoVerTurma(turmaId)){ alert('Sem permissão.'); return; } const novoId = state.alunos.length ? Math.max(...state.alunos.map(a=>a.id))+1 : 1; state.alunos.push({ id:novoId, nome, turmaId, comentarios:{b1:'',b2:'',b3:'',b4:''} }); DISCIPLINAS.forEach(disc=>{ state.notas.push({ alunoId:novoId, disciplina:disc, b1:null,b2:null,b3:null,b4:null, faltas:0, comportamento:null, habilidade:'' }); }); inputNome.value = ''; salvar(); carregarSelectTurmaAtiva(); carregarSelectAluno(); carregarFiltrosHistorico(); renderTudo(); }
-function renomearAluno(id, novo){ novo = capitalizarNome(novo); if(!novo) return; const a = state.alunos.find(x=>x.id===id); if(!a) return; if(!possoVerTurma(a.turmaId)){ alert('Sem permissão.'); return; } a.nome = novo; salvar(); carregarSelectAluno(); carregarFiltrosHistorico(); renderTudo(); }
-function moverAluno(id, novaTurmaId){ const a = state.alunos.find(x=>x.id===id); if(!a) return; if(!possoVerTurma(a.turmaId) || !possoVerTurma(parseInt(novaTurmaId))){ alert('Sem permissão.'); return; } a.turmaId = parseInt(novaTurmaId); salvar(); carregarSelectTurmaAtiva(); renderTudo(); }
-function removerAluno(id){ if(!ehAdmin()){ alert('🔒 Apenas administradores podem excluir alunos.'); return; } const a = state.alunos.find(x => x.id === id); if(!a) return; if(!confirm(`Excluir o aluno "${a.nome}"?\n\nTodas as notas e comentários dele serão apagados.`)) return; state.alunos = state.alunos.filter(x => x.id !== id); state.notas = state.notas.filter(n => n.alunoId !== id); alunosSelecionados.delete(id); salvar(); carregarSelectTurmaAtiva(); carregarSelectAluno(); carregarFiltrosHistorico(); renderTudo(); }
-function toggleImportar(){ const area = document.getElementById('importarArea'); area.style.display = area.style.display === 'none' ? 'block' : 'none'; if(area.style.display === 'block') carregarSelectNovaTurma(); }
-function carregarSelectNovaTurma(){ const sel = document.getElementById('novoAlunoTurma'); const selImp = document.getElementById('importarTurma'); const visiveis = turmasVisiveis(); const html = visiveis.length ? visiveis.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('') : '<option value="">Nenhuma turma disponível</option>'; if(sel) sel.innerHTML = html; if(selImp) selImp.innerHTML = html; }
-function importarAlunos(){ const texto = document.getElementById('importarNomes').value; const turmaId = parseInt(document.getElementById('importarTurma').value); if(!turmaId || !getTurma(turmaId)){ alert('Selecione uma turma.'); return; } if(!possoVerTurma(turmaId)){ alert('Sem permissão.'); return; } const linhas = texto.split('\n').map(l => l.trim()).filter(l => l.length > 0); if(!linhas.length){ alert('Cole pelo menos um nome.'); return; } let inseridos = 0, ignorados = 0; linhas.forEach(nomeOriginal=>{ const nome = capitalizarNome(nomeOriginal); if(!nome) return; if(state.alunos.some(a => a.turmaId === turmaId && a.nome.toLowerCase() === nome.toLowerCase())){ ignorados++; return; } const novoId = state.alunos.length ? Math.max(...state.alunos.map(a=>a.id))+1 : 1; state.alunos.push({ id:novoId, nome, turmaId, comentarios:{b1:'',b2:'',b3:'',b4:''} }); DISCIPLINAS.forEach(disc=>{ state.notas.push({ alunoId:novoId, disciplina:disc, b1:null,b2:null,b3:null,b4:null, faltas:0, comportamento:null, habilidade:'' }); }); inseridos++; }); salvar(); document.getElementById('importarNomes').value = ''; toggleImportar(); carregarSelectTurmaAtiva(); carregarSelectAluno(); carregarFiltrosHistorico(); renderTudo(); alert(`✅ ${inseridos} aluno(s) importado(s) para "${getTurma(turmaId).nome}".` + (ignorados ? `\n⚠️ ${ignorados} nome(s) duplicado(s) ignorado(s).` : '')); }
+function carregarSelectTurmaAtiva(){
+  const sel = document.getElementById('selTurmaAtiva');
+  const visiveis = turmasVisiveis();
+  sel.innerHTML = `<option value="todas">🌐 Todas as minhas turmas (${alunosVisiveis().length} alunos)</option>`;
+  visiveis.forEach(t=>{
+    const qtd = alunosDaTurma(t.id).length;
+    sel.innerHTML += `<option value="${t.id}">${t.nome} (${qtd})</option>`;
+  });
+  if(state.turmaAtiva !== "todas" && !visiveis.some(t=>t.id===state.turmaAtiva)){
+    state.turmaAtiva = "todas";
+  }
+  sel.value = state.turmaAtiva;
+}
+function carregarSelectNovaTurma(){
+  const sel = document.getElementById('novoAlunoTurma');
+  const selImp = document.getElementById('importarTurma');
+  const visiveis = turmasVisiveis();
+  const html = visiveis.length
+    ? visiveis.map(t=>`<option value="${t.id}">${t.nome}</option>`).join("")
+    : `<option value="">Nenhuma turma disponível</option>`;
+  if(sel) sel.innerHTML = html;
+  if(selImp) selImp.innerHTML = html;
+}
+function carregarSelectProfessorTurma(){
+  const sel = document.getElementById('novaTurmaProfessor');
+  if(!sel) return;
+  sel.innerHTML = `<option value="">— Sem responsável —</option>` +
+    state.usuarios.map(u=>`<option value="${u.id}">${u.nome} (${u.role === "admin" ? "Admin" : "Prof."})</option>`).join("");
+}
+function mudarTurmaAtiva(v){
+  state.turmaAtiva = v === "todas" ? "todas" : parseInt(v);
+  alunosSelecionados.clear();
+  salvar();
+  carregarSelectAluno();
+  carregarFiltrosHistorico();
+  renderTudo();
+  atualizarSubInfo();
+}
+function adicionarTurma(){
+  if(!ehAdmin()){ alert("Apenas administradores podem criar turmas."); return; }
+  const input = document.getElementById('novaTurmaNome');
+  const selProf = document.getElementById('novaTurmaProfessor');
+  const nome = input.value.trim();
+  if(!nome){ alert("Digite um nome."); return; }
+  if(state.turmas.some(t=>t.nome.toLowerCase() === nome.toLowerCase())){
+    alert("Já existe."); return;
+  }
+  const novoId = state.turmas.length ? Math.max(...state.turmas.map(t=>t.id))+1 : 1;
+  const professorId = selProf.value ? parseInt(selProf.value) : null;
+  state.turmas.push({id:novoId, nome, professorId});
+  input.value = "";
+  salvar();
+  carregarSelectTurmaAtiva();
+  carregarSelectNovaTurma();
+  carregarSelectProfessorTurma();
+  renderTudo();
+}
+function renomearTurma(id, novo){
+  novo = novo.trim(); if(!novo) return;
+  const t = getTurma(id); if(!t) return;
+  if(!ehAdmin() && t.professorId !== sessao.userId){ alert("Sem permissão."); return; }
+  t.nome = novo;
+  salvar();
+  carregarSelectTurmaAtiva();
+  carregarSelectNovaTurma();
+  renderTudo();
+}
+function mudarProfessorTurma(turmaId, novoProfId){
+  if(!ehAdmin()){ alert("Apenas admin."); return; }
+  const t = getTurma(turmaId); if(!t) return;
+  t.professorId = novoProfId ? parseInt(novoProfId) : null;
+  salvar();
+  carregarSelectTurmaAtiva();
+  renderTudo();
+}
+function removerTurma(id){
+  const t = getTurma(id); if(!t) return;
+  if(!ehAdmin()){ alert("🔒 Apenas administradores podem excluir turmas."); return; }
+  if(state.turmas.length === 1){ alert("Precisa ter ao menos uma turma."); return; }
+  const qtd = alunosDaTurma(id).length;
+  const msg = qtd>0
+    ? `⚠️ A turma "${t.nome}" tem ${qtd} aluno(s).\n\nVocê pode MOVER esses alunos para outra turma ou EXCLUÍ-LOS junto com a turma.\n\nContinuar com a remoção?`
+    : `Excluir a turma "${t.nome}"?`;
+  if(!confirm(msg)) return;
 
-function renderTurmas(){ const visiveis = turmasVisiveis(); const area = document.getElementById('turmasArea'); if(!visiveis.length){ area.innerHTML = `<div class="acesso-negado"><div class="icone">🏫</div><h3>Nenhuma turma atribuída</h3><p>${ehAdmin() ? 'Você ainda não criou turmas. Use o formulário acima.' : 'Você ainda não é responsável por nenhuma turma. Peça ao administrador para atribuir.'}</p></div>`; return; } const podeEditar = ehAdmin(); area.innerHTML = `<div style="overflow-x:auto;"><table><thead><tr><th>#</th><th>Nome</th><th>Professor(a) Responsável</th><th>Alunos</th><th>Média</th><th>Ações</th></tr></thead><tbody>${visiveis.map((t,i)=>{ const alunos = alunosDaTurma(t.id); const medias = alunos.map(a=>mediaAluno(a.id)).filter(m=>m!==null); const media = medias.length ? (medias.reduce((s,m)=>s+m,0)/medias.length).toFixed(1) : '—'; const prof = t.professorId ? getUsuario(t.professorId) : null; return `<tr><td>${i+1}</td><td>${podeEditar ? `<input type="text" value="${t.nome}" onchange="renomearTurma(${t.id},this.value)">` : `<strong>${t.nome}</strong>`}</td><td>${podeEditar ? `<select onchange="mudarProfessorTurma(${t.id},this.value)"><option value="">— Sem responsável —</option>${state.usuarios.map(u=>`<option value="${u.id}" ${u.id===t.professorId?'selected':''}>${u.nome} (${u.role === 'admin' ? 'Admin' : 'Prof.'})</option>`).join('')}</select>` : (prof ? prof.nome : '—')}</td><td><strong>${alunos.length}</strong></td><td><strong>${media}</strong></td><td style="white-space:nowrap;"><button class="btn secundario mini" onclick="filtrarPorTurma(${t.id})">Ver</button>${podeEditar && alunos.length ? `<button class="btn perigo mini" title="Excluir todos os alunos desta turma" onclick="excluirTodosDaTurma(${t.id})">🧹 Alunos</button>` : ''}${podeEditar && state.turmas.length>1 ? `<button class="btn perigo mini" title="Excluir turma" onclick="removerTurma(${t.id})">🗑️</button>` : ''}</td></tr>`; }).join('')}</tbody></table></div>`; }
-function filtrarPorTurma(id){ document.getElementById('selTurmaAtiva').value = id; mudarTurmaAtiva(id); document.querySelector("nav button[data-tab='dashboard']").click(); }
-function adicionarTurma(){ if(!ehAdmin()){ alert('Apenas administradores podem criar turmas.'); return; } const input = document.getElementById('novaTurmaNome'); const selProf = document.getElementById('novaTurmaProfessor'); const nome = input.value.trim(); if(!nome){ alert('Digite um nome.'); return; } if(state.turmas.some(t=>t.nome.toLowerCase() === nome.toLowerCase())){ alert('Já existe.'); return; } const novoId = state.turmas.length ? Math.max(...state.turmas.map(t=>t.id))+1 : 1; const professorId = selProf.value ? parseInt(selProf.value) : null; state.turmas.push({ id:novoId, nome, professorId }); input.value = ''; salvar(); carregarSelectTurmaAtiva(); carregarSelectNovaTurma(); carregarSelectProfessorTurma(); renderTudo(); }
-function renomearTurma(id, novo){ novo = novo.trim(); if(!novo) return; const t = getTurma(id); if(!t) return; if(!ehAdmin() && t.professorId !== sessao.userId){ alert('Sem permissão.'); return; } t.nome = novo; salvar(); carregarSelectTurmaAtiva(); carregarSelectNovaTurma(); renderTudo(); }
-function mudarProfessorTurma(turmaId, novoProfId){ if(!ehAdmin()){ alert('Apenas admin.'); return; } const t = getTurma(turmaId); if(!t) return; t.professorId = novoProfId ? parseInt(novoProfId) : null; salvar(); carregarSelectTurmaAtiva(); renderTudo(); }
-function removerTurma(id){ const t = getTurma(id); if(!t) return; if(!ehAdmin()){ alert('🔒 Apenas administradores podem excluir turmas.'); return; } if(state.turmas.length === 1){ alert('Precisa ter ao menos uma turma.'); return; } const qtd = alunosDaTurma(id).length; const msg = qtd > 0 ? `⚠️ A turma "${t.nome}" tem ${qtd} aluno(s).\n\nVocê pode MOVER esses alunos para outra turma ou EXCLUÍ-LOS junto com a turma.\n\nContinuar com a remoção?` : `Excluir a turma "${t.nome}"?`; if(!confirm(msg)) return; if(qtd>0){ const opcoes = state.turmas.filter(x=>x.id!==id).map(x=>`${x.id} = ${x.nome}`).join('\n'); const resposta = prompt(`O que fazer com os ${qtd} aluno(s) da turma "${t.nome}"?\n\n• Digite o ID de uma turma para MOVER os alunos\n• Digite EXCLUIR para APAGAR os alunos junto com a turma\n\nTurmas disponíveis:\n${opcoes}`); if(!resposta) return; if(resposta.trim().toUpperCase() === 'EXCLUIR'){ if(!confirm(`⚠️ TEM CERTEZA?\n\nOs ${qtd} aluno(s), suas notas e comentários serão APAGADOS PERMANENTEMENTE.`)) return; const ids = new Set(alunosDaTurma(id).map(a=>a.id)); state.alunos = state.alunos.filter(a => !ids.has(a.id)); state.notas = state.notas.filter(n => !ids.has(n.alunoId)); ids.forEach(i => alunosSelecionados.delete(i)); } else { const dest = parseInt(resposta); if(!dest || !getTurma(dest) || dest === id){ alert('Turma inválida. Operação cancelada.'); return; } state.alunos.forEach(a=>{ if(a.turmaId === id) a.turmaId = dest; }); } } state.turmas = state.turmas.filter(x=>x.id !== id); if(state.turmaAtiva === id) state.turmaAtiva = 'todas'; salvar(); carregarSelectTurmaAtiva(); carregarSelectNovaTurma(); carregarSelectProfessorTurma(); carregarSelectAluno(); carregarFiltrosHistorico(); renderTudo(); }
-function excluirTodosDaTurma(turmaId){ if(!ehAdmin()){ alert('🔒 Apenas administradores podem excluir alunos.'); return; } const t = getTurma(turmaId); if(!t) return; const alunos = alunosDaTurma(turmaId); if(!alunos.length){ alert(`A turma "${t.nome}" já está vazia.`); return; } if(!confirm(`⚠️ Excluir TODOS os ${alunos.length} aluno(s) da turma "${t.nome}"?\n\nTodas as notas e comentários serão apagados.\nEsta ação não pode ser desfeita.`)) return; const ids = new Set(alunos.map(a => a.id)); state.alunos = state.alunos.filter(a => !ids.has(a.id)); state.notas = state.notas.filter(n => !ids.has(n.alunoId)); ids.forEach(id => alunosSelecionados.delete(id)); salvar(); carregarSelectTurmaAtiva(); carregarSelectAluno(); carregarFiltrosHistorico(); renderTudo(); alert(`✅ ${alunos.length} aluno(s) excluído(s) da turma "${t.nome}".`); }
-function carregarSelectProfessorTurma(){ const sel = document.getElementById('novaTurmaProfessor'); if(!sel) return; sel.innerHTML = `<option value="">— Sem responsável —</option>` + state.usuarios.map(u=>`<option value="${u.id}">${u.nome} (${u.role === 'admin' ? 'Admin' : 'Prof.'})</option>`).join(''); }
-function renderUsuarios(){ if(!ehAdmin()){ document.getElementById('usuariosArea').innerHTML = `<div class="acesso-negado"><div class="icone">🔒</div><h3>Acesso restrito</h3><p>Apenas administradores podem gerenciar usuários.</p></div>`; return; } const eu = usuarioLogado(); const linhas = state.usuarios.map((u,i)=>{ const turmas = state.turmas.filter(t=>t.professorId === u.id); const alunosQtd = turmas.reduce((s,t)=>s+alunosDaTurma(t.id).length,0); const ehEu = u.id === eu.id; return `<tr><td>${i+1}</td><td>${ehEu ? `<strong>${u.nome}</strong> <span style="font-size:11px;color:var(--txt2);">(você)</span>` : `<input type="text" value="${u.nome}" onchange="renomearUsuario(${u.id},this.value)">`}</td><td><code style="background:var(--ps);padding:2px 6px;border-radius:4px;">${u.login}</code></td><td><span class="badge ${u.role === 'admin' ? 'admin' : 'professor'}">${u.role === 'admin' ? '👑 Admin' : '👨‍🏫 Professor'}</span></td><td><strong>${turmas.length}</strong> <span style="font-size:11px;color:var(--txt2);">(${alunosQtd} alunos)</span></td><td style="white-space:nowrap;"><button class="btn secundario mini" onclick="resetarSenha(${u.id})">🔑 Senha</button>${!ehEu ? `<button class="btn perigo mini" onclick="removerUsuario(${u.id})">🗑️</button>` : ''}</td></tr>`; }).join(''); document.getElementById('usuariosArea').innerHTML = `<div class="card"><h2>➕ Criar Novo Usuário</h2><div class="form-grid"><label>Nome completo<input type="text" id="novoUsuarioNome" placeholder="Ex: Maria Silva"></label><label>Usuário (login)<input type="text" id="novoUsuarioLogin" placeholder="ex: maria.silva"></label><label>Senha<input type="password" id="novoUsuarioSenha" placeholder="mín. 4 caracteres"></label><label>Tipo de usuário<select id="novoUsuarioRole"><option value="professor">👨‍🏫 Professor</option><option value="admin">👑 Administrador</option></select></label></div><div style="margin-top:14px;"><button class="btn" onclick="criarUsuario()">➕ Criar Usuário</button></div></div><div class="card"><h2>👥 Usuários do Sistema</h2><div style="overflow-x:auto;"><table><thead><tr><th>#</th><th>Nome</th><th>Usuário</th><th>Tipo</th><th>Turmas</th><th>Ações</th></tr></thead><tbody>${linhas}</tbody></table></div></div><div class="card"><h2>ℹ️ Como funciona</h2><ul style="font-size:13px;color:var(--txt2);line-height:1.9;padding-left:20px;"><li><strong>👑 Administrador:</strong> vê todas as turmas, cria/exclui usuários, alunos e turmas</li><li><strong>👨‍🏫 Professor:</strong> vê apenas as turmas das quais é responsável (pode lançar notas)</li><li>Atribua professores em <strong>🏫 Turmas</strong> → coluna "Professor(a) Responsável"</li><li>Sessão dura <strong>${SESSION_HORAS} horas</strong>; depois é preciso logar de novo</li><li>Senhas são armazenadas com <strong>hash</strong>, nunca em texto puro</li></ul></div>`; }
-function criarUsuario(){ const nome = document.getElementById('novoUsuarioNome').value.trim(); const login = document.getElementById('novoUsuarioLogin').value.trim().toLowerCase(); const senha = document.getElementById('novoUsuarioSenha').value; const role = document.getElementById('novoUsuarioRole').value; if(!nome){ alert('Digite o nome.'); return; } if(!login || login.length < 3){ alert('Usuário precisa ter 3+ caracteres.'); return; } if(state.usuarios.some(u=>u.login === login)){ alert('Este usuário já existe.'); return; } if(senha.length < 4){ alert('Senha precisa ter 4+ caracteres.'); return; } const novoId = state.usuarios.length ? Math.max(...state.usuarios.map(u=>u.id))+1 : 1; const senhaHash = hashSenha(senha); state.usuarios.push({ id:novoId, nome:capitalizarNome(nome), login, senhaHash, role, criadoEm:new Date().toISOString() }); salvar(); renderUsuarios(); carregarSelectProfessorTurma(); alert(`✅ Usuário "${capitalizarNome(nome)}" criado!`); }
-function renomearUsuario(id, novo){ if(!ehAdmin()) return; novo = capitalizarNome(novo); if(!novo) return; const u = getUsuario(id); if(!u) return; u.nome = novo; salvar(); atualizarUserBadge(); renderUsuarios(); carregarSelectProfessorTurma(); renderTurmas(); }
-async function resetarSenha(id){ if(!ehAdmin()) return; const u = getUsuario(id); if(!u) return; const nova = prompt(`Nova senha para "${u.nome}" (mín. 4 caracteres):`); if(!nova) return; if(nova.length < 4){ alert('Senha curta.'); return; } u.senhaHash = await hashSenha(nova); salvar(); alert(`✅ Senha de "${u.nome}" redefinida.`); }
-function removerUsuario(id){ if(!ehAdmin()) return; const u = getUsuario(id); if(!u) return; const eu = usuarioLogado(); if(u.id === eu.id){ alert('Você não pode remover a si mesmo.'); return; } const admins = state.usuarios.filter(x=>x.role === 'admin'); if(u.role === 'admin' && admins.length <= 1){ alert('Precisa haver ao menos um administrador.'); return; } if(!confirm(`Remover "${u.nome}"? As turmas dele ficarão sem responsável.`)) return; state.turmas.forEach(t=>{ if(t.professorId === id) t.professorId = null; }); state.usuarios = state.usuarios.filter(x=>x.id !== id); salvar(); renderUsuarios(); renderTurmas(); carregarSelectTurmaAtiva(); carregarSelectProfessorTurma(); }
-function carregarConfigUI(){ document.getElementById('cfgAprov').value = state.config.mediaAprov; document.getElementById('cfgRecup').value = state.config.mediaRecup; document.getElementById('cfgLimiteFaltas').value = state.config.limiteFaltas; document.getElementById('cfgAno').value = state.config.ano; document.getElementById('cfgEscola').value = state.config.escola; if(state.config.corCustom) document.getElementById('corCustom').value = state.config.corCustom; renderMetas(); }
-function salvarConfig(){ state.config.mediaAprov = parseFloat(document.getElementById('cfgAprov').value) || 5; state.config.mediaRecup = parseFloat(document.getElementById('cfgRecup').value) || 4; state.config.limiteFaltas = parseInt(document.getElementById('cfgLimiteFaltas').value) || 10; state.config.ano = document.getElementById('cfgAno').value; state.config.escola = document.getElementById('cfgEscola').value; salvar(); atualizarSubInfo(); renderTudo(); alert('✅ Salvo!'); }
-function atualizarSubInfo(){ const u = usuarioLogado(); const visiveis = turmasVisiveis(); const alunos = alunosVisiveis(); document.getElementById('subInfo').textContent = `${state.config.escola} • ${state.config.ano} • ${visiveis.length} turma(s) • ${alunos.length} aluno(s)`; const info = document.getElementById('infoFiltro'); if(info){ if(state.turmaAtiva === 'todas'){ info.textContent = u.role === 'admin' ? `Admin: vendo todas as ${visiveis.length} turma(s)` : `Vendo ${visiveis.length} turma(s) atribuída(s) a você`; } else { info.textContent = `Turma: ${getTurma(state.turmaAtiva)?.nome || ''}`; } } }
-function renderMetas(){ const el = document.getElementById('metaGrid'); el.innerHTML = DISCIPLINAS.map(d=>`<div class="meta-item"><span>${d}</span><input type="number" min="0" max="10" step="0.1" data-meta-disc="${d}" value="${state.config.metaPorDisciplina[d] ?? state.config.mediaAprov}"></div>`).join(''); }
-function salvarMetas(){ document.querySelectorAll('[data-meta-disc]').forEach(inp=>{ state.config.metaPorDisciplina[inp.dataset.metaDisc] = parseFloat(inp.value) || state.config.mediaAprov; }); salvar(); renderTudo(); alert('✅ Metas salvas!'); }
-function carregarFiltrosHistorico(){ const selA = document.getElementById('filtroHistAluno'); const selD = document.getElementById('filtroHistDisc'); if(!selA || !selD) return; selA.innerHTML = '<option value="todos">Todos os alunos</option>' + alunosVisiveis().map(a=>`<option value="${a.id}">${a.nome}</option>`).join(''); selD.innerHTML = '<option value="todas">Todas as disciplinas</option>' + DISCIPLINAS.map(d=>`<option value="${d}">${d}</option>`).join(''); }
-function renderHistorico(){ const fa = document.getElementById('filtroHistAluno').value; const fd = document.getElementById('filtroHistDisc').value; const idsVisiveis = new Set(alunosVisiveis().map(a=>a.id)); let lista = state.historico.filter(h=>idsVisiveis.has(h.alunoId)); if(fa !== 'todos') lista = lista.filter(h=>h.alunoId === parseInt(fa)); if(fd !== 'todas') lista = lista.filter(h=>h.disciplina === fd); const tbody = document.querySelector('#tabelaHistorico tbody'); if(!lista.length){ tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--txt2)">Sem alterações.</td></tr>'; return; } tbody.innerHTML = lista.map(h=>{ const d = new Date(h.data); const dataStr = d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); return `<tr><td style="font-size:11px;white-space:nowrap;">${dataStr}</td><td style="font-size:11px;">${h.usuarioNome||'—'}</td><td>${h.alunoNome}</td><td>${h.disciplina}</td><td><strong>${h.campo}</strong></td><td>${h.antes}</td><td>${h.depois}</td></tr>`; }).join(''); }
-function limparHistorico(){ if(!confirm('Apagar todo o histórico?')) return; state.historico = []; salvar(); renderHistorico(); }
-function exportarBackup(){ const data = JSON.stringify(state, null, 2); const blob = new Blob([data], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `backup_desempenho_${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(url); }
-function importarBackup(ev){ const file = ev.target.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = e => { try{ const dados = JSON.parse(e.target.result); if(!dados.alunos || !dados.notas){ alert('Arquivo inválido.'); return; } if(!confirm('Isso substituirá TODOS os dados atuais. Continuar?')) return; state = Object.assign(state, dados); garantir(); salvar(); location.reload(); }catch(err){ alert('Erro: '+err.message); } }; reader.readAsText(file); }
-function exportarCSV(){ let csv = 'Aluno;Turma;Disciplina;1 Bim;2 Bim;3 Bim;4 Bim;Media;Situacao;Faltas;Comportamento;BNCC\n'; alunosVisiveis().forEach(a=>{ state.notas.filter(n=>n.alunoId===a.id).forEach(n=>{ const m = mediaNota(n); const s = situacao(m); csv += `${a.nome};${getTurma(a.turmaId)?.nome||''};${n.disciplina};${n.b1??''};${n.b2??''};${n.b3??''};${n.b4??''};${m??''};${s};${n.faltas??0};${n.comportamento??''};${(n.habilidade||'').replace(/;/g,',')}\n`; }); }); const blob = new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `desempenho_${new Date().toISOString().slice(0,10)}.csv`; a.click(); URL.revokeObjectURL(url); }
-function abrirBoletim(alunoId){ const a = state.alunos.find(x=>x.id===alunoId); if(!a || !possoVerTurma(a.turmaId)){ alert('Sem permissão.'); return; } const turma = getTurma(a.turmaId)?.nome || ''; const professor = getTurma(a.turmaId)?.professorId ? getUsuario(getTurma(a.turmaId).professorId)?.nome : '—'; let somaMedias = 0, count = 0, somaFaltas = 0; const linhas = DISCIPLINAS.map(disc=>{ const n = state.notas.find(x=>x.alunoId===alunoId && x.disciplina===disc); const m = n ? mediaNota(n) : null; const s = situacao(m); if(m !== null){ somaMedias += m; count++; } if(n) somaFaltas += n.faltas || 0; return `<tr><td>${disc}</td><td>${n?.b1 ?? '—'}</td><td>${n?.b2 ?? '—'}</td><td>${n?.b3 ?? '—'}</td><td>${n?.b4 ?? '—'}</td><td><strong>${fmt(m)}</strong></td><td>${n?.faltas ?? 0}</td><td><strong>${textoSituacao(s)}</strong></td></tr>`; }).join(''); const mediaFinal = count ? (somaMedias/count) : 0; const sitFinal = situacao(mediaFinal); const comentariosHtml = BIMESTRES.filter(b=>a.comentarios[b]).map(b=>`<div class="bloco"><strong>${BIM_LABEL[b]}</strong>${a.comentarios[b]}</div>`).join('') || '<div class="bloco"><strong>Observações</strong>Nenhum comentário.</div>'; document.getElementById('printArea').innerHTML = `<div class="boletim-header"><div><h2>📄 Boletim Escolar</h2><div style="font-size:12px;color:var(--txt2)">${state.config.escola} • ${state.config.ano}</div></div><div class="info-escola">Ensino Fundamental 2<br>Brasília/DF</div></div><div class="boletim-aluno"><div class="campo"><strong>Aluno</strong><span>${a.nome}</span></div><div class="campo"><strong>Turma</strong><span>${turma}</span></div><div class="campo"><strong>Prof. Resp.</strong><span>${professor}</span></div><div class="campo"><strong>Ano</strong><span>${state.config.ano}</span></div></div><div class="boletim-resumo"><div class="item"><strong>${mediaFinal.toFixed(1)}</strong><span>Média Final</span></div><div class="item"><strong>${somaFaltas}</strong><span>Faltas</span></div><div class="item"><strong>${sitFinal==='aprovado'?'✓':sitFinal==='recuperacao'?'⚠':'✗'}</strong><span>${textoSituacao(sitFinal)}</span></div></div><table class="boletim-tabela"><thead><tr><th>Disciplina</th><th>1º</th><th>2º</th><th>3º</th><th>4º</th><th>Média</th><th>Faltas</th><th>Situação</th></tr></thead><tbody>${linhas}</tbody></table><div class="boletim-rodape">${comentariosHtml}</div><div style="margin-top:20px;text-align:center;font-size:11px;color:var(--txt2);">Gerado em ${new Date().toLocaleString('pt-BR')} • Média de aprovação: ${state.config.mediaAprov.toFixed(1)}</div>`; document.getElementById('modalBoletim').classList.add('aberto'); }
+  if(qtd>0){
+    const opcoes = state.turmas.filter(x=>x.id!==id).map(x=>`${x.id} = ${x.nome}`).join("\n");
+    const resposta = prompt(
+      `O que fazer com os ${qtd} aluno(s) da turma "${t.nome}"?\n\n` +
+      `• Digite o ID de uma turma para MOVER os alunos\n` +
+      `• Digite EXCLUIR para APAGAR os alunos junto com a turma\n\n` +
+      `Turmas disponíveis:\n${opcoes}`
+    );
+    if(!resposta) return;
+
+    if(resposta.trim().toUpperCase() === "EXCLUIR"){
+      if(!confirm(`⚠️ TEM CERTEZA?\n\nOs ${qtd} aluno(s), suas notas e comentários serão APAGADOS PERMANENTEMENTE.`)) return;
+      const ids = new Set(alunosDaTurma(id).map(a=>a.id));
+      state.alunos = state.alunos.filter(a => !ids.has(a.id));
+      state.notas  = state.notas.filter(n => !ids.has(n.alunoId));
+      ids.forEach(i => alunosSelecionados.delete(i));
+    } else {
+      const dest = parseInt(resposta);
+      if(!dest || !getTurma(dest) || dest === id){ alert("Turma inválida. Operação cancelada."); return; }
+      state.alunos.forEach(a=>{ if(a.turmaId === id) a.turmaId = dest; });
+    }
+  }
+
+  state.turmas = state.turmas.filter(x=>x.id !== id);
+  if(state.turmaAtiva === id) state.turmaAtiva = "todas";
+  salvar();
+  carregarSelectTurmaAtiva();
+  carregarSelectNovaTurma();
+  carregarSelectProfessorTurma();
+  carregarSelectAluno();
+  carregarFiltrosHistorico();
+  renderTudo();
+}
+
+function renderTurmas(){
+  const visiveis = turmasVisiveis();
+  const area = document.getElementById('turmasArea');
+  if(!visiveis.length){
+    area.innerHTML = `<div class="acesso-negado">
+      <div class="icone">🏫</div>
+      <h3>Nenhuma turma atribuída</h3>
+      <p>${ehAdmin()
+        ? 'Você ainda não criou turmas. Use o formulário acima.'
+        : 'Você ainda não é responsável por nenhuma turma. Peça ao administrador para atribuir.'}</p>
+    </div>`;
+    return;
+  }
+  const podeEditar = ehAdmin();
+  area.innerHTML = `
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Nome</th><th>Professor(a) Responsável</th>
+            <th>Alunos</th><th>Média</th><th>Ações</th></tr>
+        </thead>
+        <tbody>
+          ${visiveis.map((t,i)=>{
+            const alunos = alunosDaTurma(t.id);
+            const medias = alunos.map(a=>mediaAluno(a.id)).filter(m=>m!==null);
+            const media = medias.length ? (medias.reduce((s,m)=>s+m,0)/medias.length).toFixed(1) : "—";
+            const prof = t.professorId ? getUsuario(t.professorId) : null;
+            return `<tr>
+              <td>${i+1}</td>
+              <td>${podeEditar
+                ? `<input type="text" value="${t.nome}" onchange="renomearTurma(${t.id},this.value)">`
+                : `<strong>${t.nome}</strong>`}</td>
+              <td>${podeEditar
+                ? `<select onchange="mudarProfessorTurma(${t.id},this.value)">
+                     <option value="">— Sem responsável —</option>
+                     ${state.usuarios.map(u=>`<option value="${u.id}" ${u.id===t.professorId?'selected':''}>${u.nome} (${u.role==="admin"?"Admin":"Prof."})</option>`).join("")}
+                   </select>`
+                : (prof ? prof.nome : "—")}</td>
+              <td><strong>${alunos.length}</strong></td>
+              <td><strong>${media}</strong></td>
+              <td style="white-space:nowrap;">
+                <button class="btn secundario mini" onclick="filtrarPorTurma(${t.id})">Ver</button>
+                ${podeEditar && alunos.length
+                  ? `<button class="btn perigo mini" title="Excluir todos os alunos desta turma"
+                       onclick="excluirTodosDaTurma(${t.id})">🧹 Alunos</button>` : ''}
+                ${podeEditar && state.turmas.length>1
+                  ? `<button class="btn perigo mini" title="Excluir turma"
+                       onclick="removerTurma(${t.id})">🗑️</button>` : ''}
+              </td>
+            </tr>`;
+          }).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+function filtrarPorTurma(id){
+  document.getElementById('selTurmaAtiva').value = id;
+  mudarTurmaAtiva(id);
+  document.querySelector("nav button[data-tab='dashboard']").click();
+}
+
+function renderUsuarios(){
+  if(!ehAdmin()){
+    document.getElementById('usuariosArea').innerHTML = `
+      <div class="acesso-negado">
+        <div class="icone">🔒</div>
+        <h3>Acesso restrito</h3>
+        <p>Apenas administradores podem gerenciar usuários.</p>
+      </div>`;
+    return;
+  }
+  const eu = usuarioLogado();
+  const linhas = state.usuarios.map((u,i)=>{
+    const turmas = state.turmas.filter(t=>t.professorId === u.id);
+    const alunosQtd = turmas.reduce((s,t)=>s+alunosDaTurma(t.id).length,0);
+    const ehEu = u.id === eu.id;
+    return `<tr>
+      <td>${i+1}</td>
+      <td>${ehEu ? `<strong>${u.nome}</strong> <span style="font-size:11px;color:var(--txt2);">(você)</span>`
+        : `<input type="text" value="${u.nome}" onchange="renomearUsuario(${u.id},this.value)">`}</td>
+      <td><code style="background:var(--ps);padding:2px 6px;border-radius:4px;">${u.login}</code></td>
+      <td><span class="badge ${u.role === "admin" ? "admin" : "professor"}">
+        ${u.role === "admin" ? "👑 Admin" : "👨‍🏫 Professor"}
+      </span></td>
+      <td><strong>${turmas.length}</strong> <span style="font-size:11px;color:var(--txt2);">(${alunosQtd} alunos)</span></td>
+      <td style="white-space:nowrap;">
+        <button class="btn secundario mini" onclick="resetarSenha(${u.id})">🔑 Senha</button>
+        ${!ehEu ? `<button class="btn perigo mini" onclick="removerUsuario(${u.id})">🗑️</button>` : ''}
+      </td>
+    </tr>`;
+  }).join("");
+
+  document.getElementById('usuariosArea').innerHTML = `
+    <div class="card">
+      <h2>➕ Criar Novo Usuário</h2>
+      <div class="form-grid">
+        <label>Nome completo<input type="text" id="novoUsuarioNome" placeholder="Ex: Maria Silva"></label>
+        <label>Usuário (login)<input type="text" id="novoUsuarioLogin" placeholder="ex: maria.silva"></label>
+        <label>Senha<input type="password" id="novoUsuarioSenha" placeholder="mín. 4 caracteres"></label>
+        <label>Tipo de usuário
+          <select id="novoUsuarioRole">
+            <option value="professor">👨‍🏫 Professor</option>
+            <option value="admin">👑 Administrador</option>
+          </select>
+        </label>
+      </div>
+      <div style="margin-top:14px;">
+        <button class="btn" onclick="criarUsuario()">➕ Criar Usuário</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>👥 Usuários do Sistema</h2>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr><th>#</th><th>Nome</th><th>Usuário</th><th>Tipo</th><th>Turmas</th><th>Ações</th></tr>
+          </thead>
+          <tbody>${linhas}</tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>ℹ️ Como funciona</h2>
+      <ul style="font-size:13px;color:var(--txt2);line-height:1.9;padding-left:20px;">
+        <li><strong>👑 Administrador:</strong> vê todas as turmas, cria/exclui usuários, alunos e turmas</li>
+        <li><strong>👨‍🏫 Professor:</strong> vê apenas as turmas das quais é responsável (pode lançar notas)</li>
+        <li>Atribua professores em <strong>🏫 Turmas</strong> → coluna "Professor(a) Responsável"</li>
+        <li>Sessão dura <strong>${SESSION_HORAS} horas</strong>; depois é preciso logar de novo</li>
+        <li>Senhas são armazenadas com <strong>hash</strong>, nunca em texto puro</li>
+      </ul>
+    </div>
+  `;
+}
+
+async function criarUsuario(){
+  const nome = document.getElementById('novoUsuarioNome').value.trim();
+  const login = document.getElementById('novoUsuarioLogin').value.trim().toLowerCase();
+  const senha = document.getElementById('novoUsuarioSenha').value;
+  const role = document.getElementById('novoUsuarioRole').value;
+
+  if(!nome){ alert("Digite o nome."); return; }
+  if(!login || login.length < 3){ alert("Usuário precisa ter 3+ caracteres."); return; }
+  if(state.usuarios.some(u=>u.login === login)){ alert("Este usuário já existe."); return; }
+  if(senha.length < 4){ alert("Senha precisa ter 4+ caracteres."); return; }
+
+  const novoId = state.usuarios.length ? Math.max(...state.usuarios.map(u=>u.id))+1 : 1;
+  const senhaHash = await hashSenha(senha);
+  state.usuarios.push({
+    id: novoId,
+    nome: capitalizarNome(nome),
+    login, senhaHash, role,
+    criadoEm: new Date().toISOString()
+  });
+  salvar();
+  renderUsuarios();
+  carregarSelectProfessorTurma();
+  alert(`✅ Usuário "${capitalizarNome(nome)}" criado!`);
+}
+
+function renomearUsuario(id, novo){
+  if(!ehAdmin()) return;
+  novo = capitalizarNome(novo);
+  if(!novo) return;
+  const u = getUsuario(id); if(!u) return;
+  u.nome = novo;
+  salvar();
+  atualizarUserBadge();
+  renderUsuarios();
+  carregarSelectProfessorTurma();
+  renderTurmas();
+}
+
+async function resetarSenha(id){
+  if(!ehAdmin()) return;
+  const u = getUsuario(id); if(!u) return;
+  const nova = prompt(`Nova senha para "${u.nome}" (mín. 4 caracteres):`);
+  if(!nova) return;
+  if(nova.length < 4){ alert("Senha curta."); return; }
+  u.senhaHash = await hashSenha(nova);
+  salvar();
+  alert(`✅ Senha de "${u.nome}" redefinida.`);
+}
+
+function removerUsuario(id){
+  if(!ehAdmin()) return;
+  const u = getUsuario(id); if(!u) return;
+  const eu = usuarioLogado();
+  if(u.id === eu.id){ alert("Você não pode remover a si mesmo."); return; }
+  const admins = state.usuarios.filter(x=>x.role === "admin");
+  if(u.role === "admin" && admins.length <= 1){
+    alert("Precisa haver ao menos um administrador."); return;
+  }
+  if(!confirm(`Remover "${u.nome}"? As turmas dele ficarão sem responsável.`)) return;
+  state.turmas.forEach(t=>{ if(t.professorId === id) t.professorId = null; });
+  state.usuarios = state.usuarios.filter(x=>x.id !== id);
+  salvar();
+  renderUsuarios();
+  renderTurmas();
+  carregarSelectTurmaAtiva();
+  carregarSelectProfessorTurma();
+}
+
+function carregarConfigUI(){
+  document.getElementById('cfgAprov').value = state.config.mediaAprov;
+  document.getElementById('cfgRecup').value = state.config.mediaRecup;
+  document.getElementById('cfgLimiteFaltas').value = state.config.limiteFaltas;
+  document.getElementById('cfgAno').value = state.config.ano;
+  document.getElementById('cfgEscola').value = state.config.escola;
+  if(state.config.corCustom) document.getElementById('corCustom').value = state.config.corCustom;
+  renderMetas();
+}
+function salvarConfig(){
+  state.config.mediaAprov = parseFloat(document.getElementById('cfgAprov').value)||5;
+  state.config.mediaRecup = parseFloat(document.getElementById('cfgRecup').value)||4;
+  state.config.limiteFaltas = parseInt(document.getElementById('cfgLimiteFaltas').value)||10;
+  state.config.ano = document.getElementById('cfgAno').value;
+  state.config.escola = document.getElementById('cfgEscola').value;
+  salvar();
+  atualizarSubInfo();
+  renderTudo();
+  alert("✅ Salvo!");
+}
+function atualizarSubInfo(){
+  const u = usuarioLogado();
+  const visiveis = turmasVisiveis();
+  const alunos = alunosVisiveis();
+  document.getElementById('subInfo').textContent =
+    `${state.config.escola} • ${state.config.ano} • ${visiveis.length} turma(s) • ${alunos.length} aluno(s)`;
+  const info = document.getElementById('infoFiltro');
+  if(info){
+    if(state.turmaAtiva === "todas"){
+      info.textContent = u.role === "admin"
+        ? `Admin: vendo todas as ${visiveis.length} turma(s)`
+        : `Vendo ${visiveis.length} turma(s) atribuída(s) a você`;
+    } else {
+      info.textContent = `Turma: ${getTurma(state.turmaAtiva)?.nome || ""}`;
+    }
+  }
+}
+
+function renderMetas(){
+  const el = document.getElementById('metaGrid');
+  el.innerHTML = DISCIPLINAS.map(d=>`
+    <div class="meta-item">
+      <span>${d}</span>
+      <input type="number" min="0" max="10" step="0.1" data-meta-disc="${d}"
+             value="${state.config.metaPorDisciplina[d] ?? state.config.mediaAprov}">
+    </div>
+  `).join("");
+}
+function salvarMetas(){
+  document.querySelectorAll('[data-meta-disc]').forEach(inp=>{
+    state.config.metaPorDisciplina[inp.dataset.metaDisc] = parseFloat(inp.value) || state.config.mediaAprov;
+  });
+  salvar();
+  renderTudo();
+  alert("✅ Metas salvas!");
+}
+
+function logAlteracao(alunoId, disciplina, campo, antes, depois){
+  const aluno = state.alunos.find(a=>a.id === alunoId);
+  if(!aluno) return;
+  const u = usuarioLogado();
+  state.historico.unshift({
+    data: new Date().toISOString(),
+    usuarioNome: u ? u.nome : "—",
+    alunoId, alunoNome: aluno.nome,
+    disciplina, campo,
+    antes: antes ?? "—", depois: depois ?? "—"
+  });
+  if(state.historico.length > 500) state.historico = state.historico.slice(0,500);
+}
+function carregarFiltrosHistorico(){
+  const selA = document.getElementById('filtroHistAluno');
+  const selD = document.getElementById('filtroHistDisc');
+  if(!selA || !selD) return;
+  selA.innerHTML = `<option value="todos">Todos os alunos</option>` +
+    alunosVisiveis().map(a=>`<option value="${a.id}">${a.nome}</option>`).join("");
+  selD.innerHTML = `<option value="todas">Todas as disciplinas</option>` +
+    DISCIPLINAS.map(d=>`<option value="${d}">${d}</option>`).join("");
+}
+function renderHistorico(){
+  const fa = document.getElementById('filtroHistAluno').value;
+  const fd = document.getElementById('filtroHistDisc').value;
+  const idsVisiveis = new Set(alunosVisiveis().map(a=>a.id));
+  let lista = state.historico.filter(h=>idsVisiveis.has(h.alunoId));
+  if(fa !== "todos") lista = lista.filter(h=>h.alunoId === parseInt(fa));
+  if(fd !== "todas") lista = lista.filter(h=>h.disciplina === fd);
+
+  const tbody = document.querySelector('#tabelaHistorico tbody');
+  if(!lista.length){
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--txt2)">Sem alterações.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = lista.map(h=>{
+    const d = new Date(h.data);
+    const dataStr = d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    return `<tr>
+      <td style="font-size:11px;white-space:nowrap;">${dataStr}</td>
+      <td style="font-size:11px;">${h.usuarioNome||"—"}</td>
+      <td>${h.alunoNome}</td>
+      <td>${h.disciplina}</td>
+      <td><strong>${h.campo}</strong></td>
+      <td>${h.antes}</td>
+      <td>${h.depois}</td>
+    </tr>`;
+  }).join("");
+}
+function limparHistorico(){
+  if(!confirm("Apagar todo o histórico?")) return;
+  state.historico = [];
+  salvar();
+  renderHistorico();
+}
+
+function carregarFiltroDisc(){
+  const sel = document.getElementById('selFiltroDisc');
+  sel.innerHTML = `<option value="todas">Todas as disciplinas</option>` +
+    DISCIPLINAS.map(d=>`<option value="${d}">${d}</option>`).join("");
+  sel.value = state.disciplinaFiltro;
+}
+function mudarFiltroDisciplina(v){
+  state.disciplinaFiltro = v;
+  salvar();
+  renderKPIs(); renderDestaques(); renderGraficos(); renderRanking();
+}
+
+function carregarSelectAluno(){
+  const sel = document.getElementById('selAlunoLanc');
+  const visiveis = alunosVisiveis();
+  if(!sel) return;
+  sel.innerHTML = "";
+  if(!visiveis.length){
+    sel.innerHTML = `<option value="">Nenhum aluno</option>`;
+    return;
+  }
+  visiveis.forEach(a=>{
+    const opt = document.createElement('option');
+    opt.value = a.id;
+    opt.textContent = `${a.nome} — ${getTurma(a.turmaId)?.nome||"?"}`;
+    sel.appendChild(opt);
+  });
+  carregarSelectNovaTurma();
+}
+function filtrarAlunosLanc(){
+  const termo = document.getElementById('buscaAlunoLanc').value.toLowerCase().trim();
+  const sel = document.getElementById('selAlunoLanc');
+  const visiveis = alunosVisiveis();
+  sel.innerHTML = "";
+  const filtrados = termo ? visiveis.filter(a=>a.nome.toLowerCase().includes(termo)) : visiveis;
+  if(!filtrados.length){ sel.innerHTML = `<option value="">Nenhum resultado</option>`; return; }
+  filtrados.forEach(a=>{
+    const opt = document.createElement('option');
+    opt.value = a.id;
+    opt.textContent = `${a.nome} — ${getTurma(a.turmaId)?.nome||"?"}`;
+    sel.appendChild(opt);
+  });
+  renderLancamentos();
+}
+function alunoAnterior(){
+  const sel = document.getElementById('selAlunoLanc');
+  const visiveis = alunosVisiveis();
+  const atual = visiveis.findIndex(a=>a.id === parseInt(sel.value));
+  if(atual > 0){ sel.value = visiveis[atual-1].id; renderLancamentos(); }
+}
+function proximoAluno(){
+  const sel = document.getElementById('selAlunoLanc');
+  const visiveis = alunosVisiveis();
+  const atual = visiveis.findIndex(a=>a.id === parseInt(sel.value));
+  if(atual >= 0 && atual < visiveis.length-1){ sel.value = visiveis[atual+1].id; renderLancamentos(); }
+}
+
+function renderLancamentos(){
+  const alunoId = parseInt(document.getElementById('selAlunoLanc').value);
+  const tbody = document.querySelector('#tabelaLancamentos tbody');
+  const comentarios = document.getElementById('comentariosGrid');
+  tbody.innerHTML = "";
+  comentarios.innerHTML = "";
+
+  if(!alunoId){
+    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:30px;color:var(--txt2)">Selecione um aluno.</td></tr>`;
+    return;
+  }
+  const aluno = state.alunos.find(a=>a.id === alunoId);
+  if(!aluno || !possoVerTurma(aluno.turmaId)){
+    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:30px;color:var(--txt2)">Sem permissão.</td></tr>`;
+    return;
+  }
+
+  DISCIPLINAS.forEach(disc=>{
+    const nota = state.notas.find(n=>n.alunoId===alunoId && n.disciplina===disc);
+    if(!nota) return;
+    const media = mediaNota(nota);
+    const sit = situacao(media);
+    const meta = state.config.metaPorDisciplina[disc] ?? state.config.mediaAprov;
+    const bateuMeta = media !== null && media >= meta;
+
+    const b1 = nota.b1, b4 = nota.b4;
+    let seta = "";
+    if(b1 !== null && b1 !== "" && b4 !== null && b4 !== ""){
+      const dif = b4 - b1;
+      if(dif > 0.3) seta = `<span class="seta-up"> ▲</span>`;
+      else if(dif < -0.3) seta = `<span class="seta-down"> ▼</span>`;
+      else seta = `<span class="seta-flat"> ▬</span>`;
+    }
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${disc}</strong></td>
+      ${BIMESTRES.map(campo=>`
+        <td><input type="number" min="0" max="10" step="0.1" class="nota"
+             value="${nota[campo] ?? ''}"
+             onchange="atualizarNota(${alunoId},'${disc}','${campo}',this.value)"></td>
+      `).join("")}
+      <td style="text-align:center;white-space:nowrap;">
+        <strong style="color:${corSituacao(sit)}">${fmt(media)}</strong>${seta}
+      </td>
+      <td style="text-align:center;">
+        <span class="badge ${bateuMeta?'meta':'alerta'}" style="font-size:10px;">
+          ${meta.toFixed(1)}${bateuMeta?' ✓':' ✗'}
+        </span>
+      </td>
+      <td><span class="badge ${sit}">${textoSituacao(sit)}</span></td>
+      <td><input type="number" min="0" step="1" class="nota" style="width:55px;"
+           value="${nota.faltas ?? 0}"
+           onchange="atualizarFalta(${alunoId},'${disc}',this.value)"></td>
+      <td><input type="number" min="0" max="10" step="0.1" class="nota"
+           value="${nota.comportamento ?? ''}"
+           onchange="atualizarComportamento(${alunoId},'${disc}',this.value)"></td>
+      <td><input type="text" value="${nota.habilidade||''}" placeholder="Ex: EF07MA01"
+           style="min-width:120px;font-size:12px;"
+           onchange="atualizarHabilidade(${alunoId},'${disc}',this.value)"></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  comentarios.innerHTML = BIMESTRES.map(b=>`
+    <label>${BIM_LABEL[b]}
+      <textarea rows="3" placeholder="Observações..."
+        onchange="atualizarComentario(${alunoId},'${b}',this.value)">${aluno.comentarios[b]||''}</textarea>
+    </label>
+  `).join("");
+}
+
+function atualizarNota(alunoId, disc, campo, valor){
+  const nota = state.notas.find(n=>n.alunoId===alunoId && n.disciplina===disc);
+  if(!nota) return;
+  let v = parseFloat(valor);
+  if(valor===""||isNaN(v)) v = null;
+  else v = Math.max(0,Math.min(10,v));
+  const antes = nota[campo];
+  nota[campo] = v;
+  logAlteracao(alunoId, disc, BIM_LABEL[campo], antes, v);
+  salvar();
+  renderLancamentos();
+  if(document.getElementById('dashboard').classList.contains('ativa')){
+    renderKPIs(); renderDestaques(); renderRanking(); renderGraficos();
+  }
+}
+function atualizarFalta(alunoId, disc, valor){
+  const nota = state.notas.find(n=>n.alunoId===alunoId && n.disciplina===disc);
+  if(!nota) return;
+  const antes = nota.faltas;
+  nota.faltas = Math.max(0, parseInt(valor)||0);
+  logAlteracao(alunoId, disc, "Faltas", antes, nota.faltas);
+  salvar();
+}
+function atualizarComportamento(alunoId, disc, valor){
+  const nota = state.notas.find(n=>n.alunoId===alunoId && n.disciplina===disc);
+  if(!nota) return;
+  let v = parseFloat(valor);
+  if(valor===""||isNaN(v)) v = null;
+  else v = Math.max(0,Math.min(10,v));
+  const antes = nota.comportamento;
+  nota.comportamento = v;
+  logAlteracao(alunoId, disc, "Comportamento", antes, v);
+  salvar();
+}
+function atualizarHabilidade(alunoId, disc, valor){
+  const nota = state.notas.find(n=>n.alunoId===alunoId && n.disciplina===disc);
+  if(!nota) return;
+  const antes = nota.habilidade;
+  nota.habilidade = valor;
+  logAlteracao(alunoId, disc, "BNCC", antes, valor);
+  salvar();
+}
+function atualizarComentario(alunoId, bim, valor){
+  const aluno = state.alunos.find(a=>a.id===alunoId);
+  if(!aluno) return;
+  const antes = aluno.comentarios[bim];
+  aluno.comentarios[bim] = valor;
+  logAlteracao(alunoId, "—", "Comentário "+BIM_LABEL[bim], antes, valor);
+  salvar();
+}
+
+function adicionarAluno(){
+  const inputNome = document.getElementById('novoAlunoNome');
+  const selTurma = document.getElementById('novoAlunoTurma');
+  const nome = capitalizarNome(inputNome.value);
+  const turmaId = parseInt(selTurma.value);
+  if(!nome){ alert("Digite o nome."); return; }
+  if(!turmaId || !getTurma(turmaId)){ alert("Selecione turma."); return; }
+  if(!possoVerTurma(turmaId)){ alert("Sem permissão."); return; }
+
+  const novoId = state.alunos.length ? Math.max(...state.alunos.map(a=>a.id))+1 : 1;
+  state.alunos.push({id:novoId, nome, turmaId, comentarios:{b1:"",b2:"",b3:"",b4:""}});
+  DISCIPLINAS.forEach(disc=>{
+    state.notas.push({alunoId:novoId, disciplina:disc,
+      b1:null,b2:null,b3:null,b4:null,faltas:0,comportamento:null,habilidade:""});
+  });
+  inputNome.value = "";
+  salvar();
+  carregarSelectTurmaAtiva(); carregarSelectAluno(); carregarFiltrosHistorico();
+  renderTudo();
+}
+
+function toggleImportar(){
+  const area = document.getElementById('importarArea');
+  area.style.display = area.style.display === 'none' ? 'block' : 'none';
+  if(area.style.display === 'block') carregarSelectNovaTurma();
+}
+
+function importarAlunos(){
+  const texto = document.getElementById('importarNomes').value;
+  const turmaId = parseInt(document.getElementById('importarTurma').value);
+  if(!turmaId || !getTurma(turmaId)){ alert("Selecione uma turma."); return; }
+  if(!possoVerTurma(turmaId)){ alert("Sem permissão."); return; }
+
+  const linhas = texto.split('\n')
+    .map(l => l.trim())
+    .filter(l => l.length > 0);
+
+  if(!linhas.length){ alert("Cole pelo menos um nome."); return; }
+
+  let inseridos = 0, ignorados = 0;
+  linhas.forEach(nomeOriginal=>{
+    const nome = capitalizarNome(nomeOriginal);
+    if(!nome) return;
+    if(state.alunos.some(a => a.turmaId === turmaId &&
+        a.nome.toLowerCase() === nome.toLowerCase())){ ignorados++; return; }
+    const novoId = state.alunos.length ? Math.max(...state.alunos.map(a=>a.id))+1 : 1;
+    state.alunos.push({id:novoId, nome, turmaId,
+      comentarios:{b1:"",b2:"",b3:"",b4:""}});
+    DISCIPLINAS.forEach(disc=>{
+      state.notas.push({alunoId:novoId, disciplina:disc,
+        b1:null,b2:null,b3:null,b4:null,faltas:0,comportamento:null,habilidade:""});
+    });
+    inseridos++;
+  });
+
+  salvar();
+  document.getElementById('importarNomes').value = "";
+  toggleImportar();
+  carregarSelectTurmaAtiva();
+  carregarSelectAluno();
+  carregarFiltrosHistorico();
+  renderTudo();
+  alert(`✅ ${inseridos} aluno(s) importado(s) para "${getTurma(turmaId).nome}".`
+    + (ignorados ? `\n⚠️ ${ignorados} nome(s) duplicado(s) ignorado(s).` : ""));
+}
+
+function renomearAluno(id, novo){
+  novo = capitalizarNome(novo);
+  if(!novo) return;
+  const a = state.alunos.find(x=>x.id===id); if(!a) return;
+  if(!possoVerTurma(a.turmaId)){ alert("Sem permissão."); return; }
+  a.nome = novo;
+  salvar();
+  carregarSelectAluno(); carregarFiltrosHistorico(); renderTudo();
+}
+function moverAluno(id, novaTurmaId){
+  const a = state.alunos.find(x=>x.id===id); if(!a) return;
+  if(!possoVerTurma(a.turmaId) || !possoVerTurma(parseInt(novaTurmaId))){
+    alert("Sem permissão."); return;
+  }
+  a.turmaId = parseInt(novaTurmaId);
+  salvar(); carregarSelectTurmaAtiva(); renderTudo();
+}
+function removerAluno(id){
+  if(!ehAdmin()){ alert("🔒 Apenas administradores podem excluir alunos."); return; }
+  const a = state.alunos.find(x => x.id === id);
+  if(!a) return;
+  if(!confirm(`Excluir o aluno "${a.nome}"?\n\nTodas as notas e comentários dele serão apagados.`)) return;
+  state.alunos = state.alunos.filter(x => x.id !== id);
+  state.notas = state.notas.filter(n => n.alunoId !== id);
+  alunosSelecionados.delete(id);
+  salvar();
+  carregarSelectTurmaAtiva();
+  carregarSelectAluno();
+  carregarFiltrosHistorico();
+  renderTudo();
+}
+
+function toggleSelecaoAluno(id){
+  if(alunosSelecionados.has(id)) alunosSelecionados.delete(id);
+  else alunosSelecionados.add(id);
+  renderAlunos();
+}
+
+function toggleSelecionarTodos(checked){
+  const termo = (document.getElementById('buscaAluno')?.value || "").toLowerCase().trim();
+  const visiveis = alunosVisiveis().filter(a => !termo || a.nome.toLowerCase().includes(termo));
+  if(checked) visiveis.forEach(a => alunosSelecionados.add(a.id));
+  else visiveis.forEach(a => alunosSelecionados.delete(a.id));
+  renderAlunos();
+}
+
+function excluirSelecionados(){
+  if(!ehAdmin()){ alert("🔒 Apenas administradores podem excluir alunos."); return; }
+  if(!alunosSelecionados.size){ alert("Nenhum aluno selecionado."); return; }
+  const qtd = alunosSelecionados.size;
+  if(!confirm(`Excluir ${qtd} aluno(s) selecionado(s)?\n\nTodas as notas e comentários serão apagados.\nEsta ação não pode ser desfeita.`)) return;
+  state.alunos = state.alunos.filter(a => !alunosSelecionados.has(a.id));
+  state.notas = state.notas.filter(n => !alunosSelecionados.has(n.alunoId));
+  alunosSelecionados.clear();
+  salvar();
+  carregarSelectTurmaAtiva();
+  carregarSelectAluno();
+  carregarFiltrosHistorico();
+  renderTudo();
+  alert(`✅ ${qtd} aluno(s) excluído(s).`);
+}
+
+function excluirTodosDaTurma(turmaId){
+  if(!ehAdmin()){ alert("🔒 Apenas administradores podem excluir alunos."); return; }
+  const t = getTurma(turmaId); if(!t) return;
+  const alunos = alunosDaTurma(turmaId);
+  if(!alunos.length){ alert(`A turma "${t.nome}" já está vazia.`); return; }
+  if(!confirm(`⚠️ Excluir TODOS os ${alunos.length} aluno(s) da turma "${t.nome}"?\n\nTodas as notas e comentários serão apagados.\nEsta ação não pode ser desfeita.`)) return;
+  const ids = new Set(alunos.map(a => a.id));
+  state.alunos = state.alunos.filter(a => !ids.has(a.id));
+  state.notas  = state.notas.filter(n => !ids.has(n.alunoId));
+  ids.forEach(id => alunosSelecionados.delete(id));
+  salvar();
+  carregarSelectTurmaAtiva();
+  carregarSelectAluno();
+  carregarFiltrosHistorico();
+  renderTudo();
+  alert(`✅ ${alunos.length} aluno(s) excluído(s) da turma "${t.nome}".`);
+}
+
+function verLancamentos(alunoId){
+  document.querySelector("nav button[data-tab='lancamentos']").click();
+  document.getElementById('buscaAlunoLanc').value = "";
+  carregarSelectAluno();
+  document.getElementById('selAlunoLanc').value = alunoId;
+  renderLancamentos();
+}
+function renderAlunos(){
+  const termo = (document.getElementById('buscaAluno')?.value || "").toLowerCase().trim();
+  const visiveis = alunosVisiveis().filter(a => !termo || a.nome.toLowerCase().includes(termo));
+  const tbody = document.querySelector('#tabelaAlunos tbody');
+  const admin = ehAdmin();
+
+  const barra = document.getElementById('barraAcoesAlunos');
+  if(barra){
+    if(admin){
+      barra.style.display = 'flex';
+      barra.innerHTML = `
+        <button class="btn" onclick="excluirSelecionados()"
+                style="background:#d9534f;">
+          🗑️ Excluir selecionados (${alunosSelecionados.size})
+        </button>
+        <button class="btn secundario" onclick="alunosSelecionados.clear(); renderAlunos();">
+          Limpar seleção
+        </button>
+      `;
+    } else {
+      barra.style.display = 'none';
+    }
+  }
+
+  if(!visiveis.length){
+    tbody.innerHTML = `<tr><td colspan="${admin ? 8 : 7}" style="text-align:center;padding:30px;color:var(--txt2)">
+      ${state.alunos.length === 0
+        ? 'Nenhum aluno cadastrado ainda. Use o formulário acima para adicionar.'
+        : 'Nenhum aluno encontrado.'}</td></tr>`;
+    return;
+  }
+
+  const turmasDisp = turmasVisiveis();
+  const todosMarcados = visiveis.every(a => alunosSelecionados.has(a.id));
+
+  tbody.innerHTML = visiveis.map((a,i)=>{
+    const media = mediaAluno(a.id);
+    const sit = situacao(media);
+    const faltas = totalFaltasAluno(a.id);
+    const alertaFalta = faltas > state.config.limiteFaltas;
+    const marcado = alunosSelecionados.has(a.id);
+    return `<tr class="${alertaFalta ? 'linha-alerta' : ''} ${marcado ? 'linha-selecionada' : ''}">
+      ${admin ? `<td style="text-align:center;">
+        <input type="checkbox" style="width:18px;height:18px;cursor:pointer;"
+               ${marcado ? 'checked' : ''}
+               onchange="toggleSelecaoAluno(${a.id})">
+      </td>` : ''}
+      <td>${i+1}</td>
+      <td>
+        ${admin
+          ? `<input type="text" value="${a.nome}" onchange="renomearAluno(${a.id},this.value)">`
+          : `<strong>${a.nome}</strong>`}
+      </td>
+      <td>
+        ${admin
+          ? `<select onchange="moverAluno(${a.id},this.value)">
+               ${turmasDisp.map(t=>`<option value="${t.id}" ${t.id===a.turmaId?'selected':''}>${t.nome}</option>`).join("")}
+             </select>`
+          : getTurma(a.turmaId)?.nome || "—"}
+      </td>
+      <td><strong>${fmt(media)}</strong></td>
+      <td>${alertaFalta?`<span class="badge alerta">⚠️ ${faltas}</span>`:faltas}</td>
+      <td><span class="badge ${sit}">${textoSituacao(sit)}</span></td>
+      <td style="white-space:nowrap;">
+        <button class="btn secundario mini" onclick="verLancamentos(${a.id})">📝</button>
+        <button class="btn mini" onclick="abrirBoletim(${a.id})">📄</button>
+        ${admin ? `<button class="btn perigo mini" onclick="removerAluno(${a.id})">🗑️</button>` : ''}
+      </td>
+    </tr>`;
+  }).join("");
+
+  const thead = document.querySelector('#tabelaAlunos thead tr');
+  if(admin){
+    if(!thead.querySelector('.col-check')){
+      const thCheck = document.createElement('th');
+      thCheck.className = 'col-check';
+      thCheck.style.textAlign = 'center';
+      thCheck.style.width = '40px';
+      thCheck.innerHTML = `<input type="checkbox" id="checkTodos" style="width:16px;height:16px;cursor:pointer;"
+        onchange="toggleSelecionarTodos(this.checked)">`;
+      thead.insertBefore(thCheck, thead.firstChild);
+    }
+    const ct = document.getElementById('checkTodos');
+    if(ct) ct.checked = todosMarcados && visiveis.length > 0;
+  } else {
+    const th = thead.querySelector('.col-check');
+    if(th) th.remove();
+  }
+}
+
+function renderKPIs(){
+  const visiveis = alunosVisiveis();
+  const medias = visiveis.map(a=>mediaAluno(a.id)).filter(m=>m!==null);
+  const mediaTurma = medias.length ? medias.reduce((s,m)=>s+m,0)/medias.length : 0;
+
+  const sit = visiveis.map(a=>situacao(mediaAluno(a.id)));
+  const total = sit.length || 1;
+  const aprov = sit.filter(s=>s === "aprovado").length;
+  const recup = sit.filter(s=>s === "recuperacao").length;
+  const reprov = sit.filter(s=>s === "reprovado").length;
+  const alertaFaltas = visiveis.filter(a=>totalFaltasAluno(a.id) > state.config.limiteFaltas).length;
+
+  const u = usuarioLogado();
+  const rotulo = state.turmaAtiva === "todas"
+    ? (u && u.role === "admin" ? "Todas as Turmas" : "Minhas Turmas")
+    : (getTurma(state.turmaAtiva)?.nome || "");
+
+  document.getElementById('kpis').innerHTML = `
+    <div class="kpi azul-claro">
+      <div class="label">${rotulo}</div>
+      <div class="valor">${medias.length ? mediaTurma.toFixed(1) : '—'}</div>
+      <div class="extra">${visiveis.length} aluno(s)</div>
+    </div>
+    <div class="kpi verde">
+      <div class="label">Aprovados</div>
+      <div class="valor">${aprov}</div>
+      <div class="extra">${((aprov/total)*100).toFixed(0)}%</div>
+    </div>
+    <div class="kpi amarelo">
+      <div class="label">Recuperação</div>
+      <div class="valor">${recup}</div>
+      <div class="extra">${((recup/total)*100).toFixed(0)}%</div>
+    </div>
+    <div class="kpi vermelho">
+      <div class="label">Reprovados</div>
+      <div class="valor">${reprov}</div>
+      <div class="extra">${((reprov/total)*100).toFixed(0)}%</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Faltas acima do limite</div>
+      <div class="valor">${alertaFaltas}</div>
+      <div class="extra">Limite: ${state.config.limiteFaltas}</div>
+    </div>
+  `;
+}
+
+function renderDestaques(){
+  const visiveis = alunosVisiveis();
+  if(!visiveis.length){
+    document.getElementById('destaques').innerHTML = "";
+    return;
+  }
+
+  let melhorAluno = null;
+  let melhorMedia = -1;
+  let alunoEmCrescimento = null;
+  let maiorCrescimento = -Infinity;
+
+  visiveis.forEach(a => {
+    const media = mediaAluno(a.id);
+    if(media !== null && media > melhorMedia){
+      melhorMedia = media;
+      melhorAluno = a;
+    }
+
+    const notas = state.notas.filter(n => n.alunoId === a.id);
+    const valores = notas.map(n => mediaNota(n)).filter(v => v !== null);
+    if(valores.length >= 2){
+      const inicio = valores[0];
+      const fim = valores[valores.length - 1];
+      const diff = fim - inicio;
+      if(diff > maiorCrescimento){
+        maiorCrescimento = diff;
+        alunoEmCrescimento = a;
+      }
+    }
+  });
+
+  const disciplinaTop = DISCIPLINAS.map(d => ({
+    nome: d,
+    media: mediaDisciplina(d, visiveis)
+  })).filter(x => x.media !== null).sort((a,b) => b.media - a.media)[0];
+
+  document.getElementById('destaques').innerHTML = `
+    <div class="destaque">
+      <div class="icone">🏅</div>
+      <div>
+        <div class="titulo">Melhor aluno</div>
+        <div class="nome">${melhorAluno ? melhorAluno.nome : '—'}</div>
+        <div class="detalhe">Média ${melhorMedia !== -1 ? melhorMedia.toFixed(1) : '—'}</div>
+      </div>
+    </div>
+    <div class="destaque">
+      <div class="icone">📈</div>
+      <div>
+        <div class="titulo">Mais evolução</div>
+        <div class="nome">${alunoEmCrescimento ? alunoEmCrescimento.nome : '—'}</div>
+        <div class="detalhe">+${(maiorCrescimento===-Infinity ? 0 : maiorCrescimento).toFixed(1)} pts</div>
+      </div>
+    </div>
+    <div class="destaque">
+      <div class="icone">🎯</div>
+      <div>
+        <div class="titulo">Disciplina forte</div>
+        <div class="nome">${disciplinaTop ? disciplinaTop.nome : '—'}</div>
+        <div class="detalhe">Média ${disciplinaTop ? disciplinaTop.media.toFixed(1) : '—'}</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderRanking(){
+  const visiveis = alunosVisiveis();
+  const tbody = document.querySelector('#tabelaRanking tbody');
+  if(!visiveis.length){
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--txt2)">Sem alunos.</td></tr>`;
+    return;
+  }
+
+  const dados = visiveis.map(a => ({
+    id: a.id,
+    nome: a.nome,
+    turma: getTurma(a.turmaId)?.nome || '—',
+    media: mediaAluno(a.id),
+    meta: state.config.mediaAprov,
+    situacao: situacao(mediaAluno(a.id))
+  })).filter(d => d.media !== null).sort((a,b) => b.media - a.media);
+
+  tbody.innerHTML = dados.map((d, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td>${d.nome}</td>
+      <td>${d.turma}</td>
+      <td><strong>${fmt(d.media)}</strong></td>
+      <td>${d.meta.toFixed(1)}</td>
+      <td><span class="badge ${d.situacao}">${textoSituacao(d.situacao)}</span></td>
+    </tr>
+  `).join("");
+}
+
+function renderGraficos(){
+  const visiveis = alunosVisiveis();
+  const txtCor = cssVar("--txt");
+  const txt2Cor = cssVar("--txt2");
+  const primaria = cssVar("--p");
+  const gridCor = cssVar("--borda");
+
+  if(charts.chartAlunos) charts.chartAlunos.destroy();
+  if(charts.chartDisciplinas) charts.chartDisciplinas.destroy();
+  if(charts.chartSituacao) charts.chartSituacao.destroy();
+  if(charts.chartEvolucao) charts.chartEvolucao.destroy();
+  if(charts.chartComparativo) charts.chartComparativo.destroy();
+
+  const ctxAlunos = document.getElementById('chartAlunos');
+  if(ctxAlunos){
+    const labels = visiveis.map(a => a.nome.slice(0, 12));
+    const dados = visiveis.map(a => mediaAluno(a.id) ?? 0);
+    charts.chartAlunos = new Chart(ctxAlunos, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Média',
+          data: dados,
+          backgroundColor: hexToRGBA(primaria, 0.85),
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { min: 0, max: 10, grid: { color: gridCor }, ticks: { color: txt2Cor } },
+          x: { ticks: { color: txt2Cor } }
+        },
+        plugins: { legend: { display: false } }
+      }
+    });
+  }
+
+  const ctxDisc = document.getElementById('chartDisciplinas');
+  if(ctxDisc){
+    const labels = DISCIPLINAS.map(d => d);
+    const vals = labels.map(d => mediaDisciplina(d, visiveis) ?? 0);
+    charts.chartDisciplinas = new Chart(ctxDisc, {
+      type: 'radar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Médias',
+          data: vals,
+          backgroundColor: hexToRGBA(primaria, 0.2),
+          borderColor: primaria,
+          pointBackgroundColor: primaria
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          r: { min: 0, max: 10, grid: { color: gridCor }, angleLines: { color: gridCor }, pointLabels: { color: txt2Cor } }
+        },
+        plugins: { legend: { display: false } }
+      }
+    });
+  }
+
+  const ctxSituacao = document.getElementById('chartSituacao');
+  if(ctxSituacao){
+    const aprov = visiveis.filter(a => situacao(mediaAluno(a.id)) === 'aprovado').length;
+    const rec = visiveis.filter(a => situacao(mediaAluno(a.id)) === 'recuperacao').length;
+    const rep = visiveis.filter(a => situacao(mediaAluno(a.id)) === 'reprovado').length;
+    charts.chartSituacao = new Chart(ctxSituacao, {
+      type: 'doughnut',
+      data: {
+        labels: ['Aprovado', 'Recuperação', 'Reprovado'],
+        datasets: [{
+          data: [aprov, rec, rep],
+          backgroundColor: ['#2fa84f', '#d99a00', '#d9534f']
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: txt2Cor } } }
+      }
+    });
+  }
+
+  const ctxEvolucao = document.getElementById('chartEvolucao');
+  if(ctxEvolucao){
+    charts.chartEvolucao = new Chart(ctxEvolucao, {
+      type: 'line',
+      data: {
+        labels: ['1º', '2º', '3º', '4º'],
+        datasets: [{
+          label: 'Média da turma',
+          data: BIMESTRES.map(b => mediaBimestre(b, visiveis) ?? 0),
+          borderColor: primaria,
+          backgroundColor: hexToRGBA(primaria, 0.15),
+          tension: 0.35,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { min: 0, max: 10, grid: { color: gridCor }, ticks: { color: txt2Cor } },
+          x: { ticks: { color: txt2Cor } }
+        },
+        plugins: { legend: { labels: { color: txt2Cor } } }
+      }
+    });
+  }
+
+  const cardComp = document.getElementById('cardComparativo');
+  const visiveisTurmas = turmasVisiveis();
+  if(state.turmaAtiva === 'todas' && visiveisTurmas.length > 1 && document.getElementById('chartComparativo')){
+    cardComp.style.display = 'block';
+    const ctxComp = document.getElementById('chartComparativo');
+    charts.chartComparativo = new Chart(ctxComp, {
+      type: 'bar',
+      data: {
+        labels: visiveisTurmas.map(t => t.nome),
+        datasets: [{
+          label: 'Média',
+          data: visiveisTurmas.map(t => {
+            const alunosT = alunosDaTurma(t.id);
+            const medias = alunosT.map(a => mediaAluno(a.id)).filter(m => m !== null);
+            if(!medias.length) return 0;
+            return medias.reduce((s,m) => s + m, 0) / medias.length;
+          }),
+          backgroundColor: visiveisTurmas.map((_, idx) => idx % 2 ? hexToRGBA(primaria, 0.7) : hexToRGBA('#2fa84f', 0.7))
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { min: 0, max: 10, grid: { color: gridCor }, ticks: { color: txt2Cor } },
+          x: { ticks: { color: txt2Cor } }
+        },
+        plugins: { legend: { display: false } }
+      }
+    });
+  } else if(cardComp) {
+    cardComp.style.display = 'none';
+  }
+}
+
+function exportarCSV(){
+  let csv = 'Aluno;Turma;Disciplina;1 Bim;2 Bim;3 Bim;4 Bim;Media;Situacao;Faltas;Comportamento;BNCC\n';
+  alunosVisiveis().forEach(a => {
+    state.notas.filter(n => n.alunoId === a.id).forEach(n => {
+      csv += [
+        a.nome,
+        getTurma(a.turmaId)?.nome || '',
+        n.disciplina,
+        n.b1 ?? '',
+        n.b2 ?? '',
+        n.b3 ?? '',
+        n.b4 ?? '',
+        mediaNota(n) ?? '',
+        textoSituacao(situacao(mediaNota(n))),
+        n.faltas ?? 0,
+        n.comportamento ?? '',
+        n.habilidade || ''
+      ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(';') + '\n';
+    });
+  });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'desempenho_escolar.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function abrirBoletim(alunoId){
+  const a = state.alunos.find(x=>x.id===alunoId); if(!a || !possoVerTurma(a.turmaId)){ alert('Sem permissão.'); return; }
+  const turma = getTurma(a.turmaId)?.nome || '—';
+  const notas = state.notas.filter(n => n.alunoId === alunoId);
+  const mediaGeral = mediaAluno(alunoId);
+  const totalFaltas = totalFaltasAluno(alunoId);
+  document.getElementById('printArea').innerHTML = `
+    <div id="boletimConteudo" style="padding:0;">
+      <div class="boletim-header">
+        <div>
+          <h2>${state.config.escola}</h2>
+          <div style="font-size:12px;color:var(--txt2);margin-top:4px;">Ano letivo: ${state.config.ano}</div>
+        </div>
+        <div class="info-escola">
+          <div>Boletim Individual</div>
+          <div>Turma: ${turma}</div>
+        </div>
+      </div>
+      <div class="boletim-aluno">
+        <div class="campo"><strong>Aluno</strong><span>${a.nome}</span></div>
+        <div class="campo"><strong>Turma</strong><span>${turma}</span></div>
+        <div class="campo"><strong>Média Geral</strong><span>${fmt(mediaGeral)}</span></div>
+        <div class="campo"><strong>Faltas</strong><span>${totalFaltas}</span></div>
+      </div>
+      <div class="boletim-resumo">
+        <div class="item"><strong>${notas.filter(n => situacao(mediaNota(n)) === 'aprovado').length}</strong><span>Aprovados</span></div>
+        <div class="item"><strong>${notas.filter(n => situacao(mediaNota(n)) === 'recuperacao').length}</strong><span>Rec.</span></div>
+        <div class="item"><strong>${notas.filter(n => situacao(mediaNota(n)) === 'reprovado').length}</strong><span>Reprov.</span></div>
+      </div>
+      <table class="boletim-tabela">
+        <thead>
+          <tr><th>Disciplina</th>${BIMESTRES.map(b => `<th>${BIM_LABEL[b]}</th>`).join('')}<th>Média</th><th>Situação</th></tr>
+        </thead>
+        <tbody>
+          ${notas.map(n => {
+            const media = mediaNota(n);
+            const sit = situacao(media);
+            return `<tr>
+              <td>${n.disciplina}</td>
+              ${BIMESTRES.map(b => `<td>${n[b] ?? '—'}</td>`).join('')}
+              <td>${fmt(media)}</td>
+              <td><span class="badge ${sit}">${textoSituacao(sit)}</span></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+      <div class="boletim-rodape">
+        <div class="bloco">
+          <strong>Observações</strong>
+          ${BIMESTRES.map(b => `<div><strong>${BIM_LABEL[b]}:</strong> ${a.comentarios[b] || '—'}</div>`).join('')}
+        </div>
+        <div class="bloco">
+          <strong>Assinaturas</strong>
+          <div>Professor(a): _______________________</div>
+          <div>Diretoria: _________________________</div>
+          <div>Responsável: _______________________</div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('modalBoletim').classList.add('aberto');
+}
 function fecharBoletim(){ document.getElementById('modalBoletim').classList.remove('aberto'); }
-function mudarAba(btn){ document.querySelectorAll('nav button').forEach(b=>b.classList.remove('ativo')); btn.classList.add('ativo'); document.querySelectorAll('.aba').forEach(a=>a.classList.remove('ativa')); document.getElementById(btn.dataset.tab).classList.add('ativa'); if(btn.dataset.tab === 'dashboard') setTimeout(renderGraficos, 50); if(btn.dataset.tab === 'historico') renderHistorico(); if(btn.dataset.tab === 'usuarios') renderUsuarios(); }
-function montarTemas(){ const html = TEMAS.map(t=>`<div class="tema-swatch ${t.id===state.tema?'ativo':''}" style="background:${t.cor};" title="${t.nome}" data-tema-id="${t.id}" onclick="mudarTema('${t.id}')"></div>`).join(''); document.getElementById('temaSelector').innerHTML = html; document.getElementById('temaSelectorConfig').innerHTML = html; }
-function atualizarSwatches(){ document.querySelectorAll('.tema-swatch').forEach(el=>el.classList.toggle('ativo', el.dataset.temaId === state.tema)); }
-function aplicarTema(id){ state.tema = id; document.body.setAttribute('data-tema', id); atualizarSwatches(); if(Object.keys(charts).length) setTimeout(renderGraficos, 50); }
+
+function montarTemas(){
+  const html = TEMAS.map(t => `<div class="tema-swatch ${t.id===state.tema?'ativo':''}" style="background:${t.cor};" title="${t.nome}" data-tema-id="${t.id}" onclick="mudarTema('${t.id}')"></div>`).join("");
+  document.getElementById('temaSelector').innerHTML = html;
+  document.getElementById('temaSelectorConfig').innerHTML = html;
+  atualizarSwatches();
+}
+function atualizarSwatches(){
+  document.querySelectorAll('.tema-swatch').forEach(el => el.classList.toggle('ativo', el.dataset.temaId === state.tema));
+}
+function aplicarTema(id){
+  state.tema = id;
+  document.body.setAttribute('data-tema', id);
+  atualizarSwatches();
+  if(Object.keys(charts).length) setTimeout(renderGraficos, 50);
+}
 function mudarTema(id){ aplicarTema(id); salvar(); }
 function aplicarCorCustom(cor){ state.config.corCustom = cor; salvar(); }
 function limparCorCustom(){ state.config.corCustom = null; document.getElementById('corCustom').value = '#1f4e78'; salvar(); }
-function init(){ const salvo = localStorage.getItem(STORAGE_KEY); if(salvo){ try{ state = JSON.parse(salvo); }catch(e){ state = { usuarios: [], config:{ mediaAprov:5.0, mediaRecup:4.0, limiteFaltas:10, ano:2025, escola:'Escola X', metaPorDisciplina:{}, corCustom:null }, tema:'azul', turmaAtiva:'todas', disciplinaFiltro:'todas', turmas:[], alunos:[], notas:[], historico:[] }; } } garantir(); const sSalva = localStorage.getItem(SESSION_KEY); if(sSalva){ try{ const s = JSON.parse(sSalva); const exp = s.expira || 0; const user = state.usuarios.find(u=>u.id===s.userId); if(user && Date.now() < exp) sessao = { userId: s.userId }; else localStorage.removeItem(SESSION_KEY); }catch(e){} } if(!state.usuarios.length){ mostrarTelaSetup(); return; } if(!sessao){ mostrarTelaLogin(); return; } entrarNoApp(); }
+
+function renderTudo(){
+  carregarSelectProfessorTurma();
+  renderKPIs();
+  renderDestaques();
+  renderRanking();
+  renderLancamentos();
+  renderAlunos();
+  renderTurmas();
+  carregarSelectNovaTurma();
+  if(document.getElementById('dashboard').classList.contains('ativa')) renderGraficos();
+}
+
+function init(){
+  const salvo = localStorage.getItem(STORAGE_KEY);
+  if(salvo){
+    try{ state = JSON.parse(salvo); }catch(e){ gerarDadosIniciais(); }
+  } else {
+    gerarDadosIniciais();
+  }
+  garantir();
+
+  const sSalva = localStorage.getItem(SESSION_KEY);
+  if(sSalva){
+    try{
+      const s = JSON.parse(sSalva);
+      const exp = s.expira || 0;
+      const user = state.usuarios.find(u=>u.id===s.userId);
+      if(user && Date.now() < exp) sessao = { userId: s.userId };
+      else localStorage.removeItem(SESSION_KEY);
+    }catch(e){}
+  }
+
+  if(!state.usuarios.length){ mostrarTelaSetup(); return; }
+  if(!sessao){ mostrarTelaLogin(); return; }
+  entrarNoApp();
+}
+
 window.addEventListener('DOMContentLoaded', init);
 document.getElementById('modalBoletim').addEventListener('click', e=>{ if(e.target.id === 'modalBoletim') fecharBoletim(); });
 </script>
