@@ -23,7 +23,6 @@ body[data-tema="escuro"]{
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--txt);line-height:1.5;transition:background .3s,color .3s}
 
-/* ================= LOGIN ================= */
 .login-screen{position:fixed;inset:0;background:linear-gradient(135deg,#1f4e78 0%,#2c6ba0 100%);display:flex;align-items:center;justify-content:center;z-index:10000;padding:20px}
 .login-box{background:#fff;border-radius:14px;padding:38px 42px;max-width:400px;width:100%;box-shadow:0 25px 70px rgba(0,0,0,.35);text-align:center}
 .login-box .logo{font-size:46px;margin-bottom:8px}
@@ -37,22 +36,18 @@ body{font-family:'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:v
 .login-box button:hover{background:#2c6ba0}
 .login-box .erro{color:#d9534f;font-size:12px;margin-top:10px;min-height:16px;font-weight:500}
 .login-box .link{color:#1f4e78;font-size:12px;margin-top:14px;cursor:pointer;text-decoration:underline}
-
-/* ================= HEADER ================= */
-header{background:linear-gradient(135deg,var(--p) 0%,var(--p2) 100%);color:#fff;padding:18px 30px;box-shadow:0 4px 12px rgba(0,0,0,.15);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+header{background:linear-gradient(135deg,var(--p) 0%,var(--p2) 100%);color:#fff;padding:18px 30px;box-shadow:0 4px 12px rgba(0,0,0,.15);display:flex;justify-content:space-between;align-items:center}
 header h1{font-size:20px;font-weight:600}
 header .sub{font-size:12px;opacity:.9;margin-top:3px}
 header .acoes{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-header button,header label.btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:7px 12px;border-radius:6px;cursor:pointer;font-size:12px;transition:all .2s;font-family:inherit}
+header button,header label.btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:7px 12px;border-radius:6px;cursor:pointer;font-size:12px;transition:all .2s}
 header button:hover,header label.btn:hover{background:rgba(255,255,255,.3)}
 header .user-badge{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.18);padding:6px 12px;border-radius:20px;font-size:12px;border:1px solid rgba(255,255,255,.25)}
 header .user-badge .avatar{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px}
 header .user-badge .role{font-size:10px;opacity:.85;text-transform:uppercase;letter-spacing:.5px}
 header .user-badge strong{font-weight:600;font-size:12px}
-
-/* ================= NAV / LAYOUT ================= */
 nav{background:var(--card);padding:0 25px;display:flex;gap:2px;border-bottom:1px solid var(--borda);overflow-x:auto}
-nav button{background:none;border:none;padding:15px 18px;font-size:13px;font-weight:500;color:var(--txt2);cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;white-space:nowrap;font-family:inherit}
+nav button{background:none;border:none;padding:15px 18px;font-size:13px;font-weight:500;color:var(--txt2);cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;white-space:nowrap}
 nav button:hover{color:var(--p);background:var(--ps)}
 nav button.ativo{color:var(--p);border-bottom-color:var(--p);font-weight:600}
 .barra-filtro{background:var(--card);padding:10px 30px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--borda);flex-wrap:wrap;font-size:13px}
@@ -88,7 +83,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}
 th{background:var(--p);color:#fff;padding:9px 11px;text-align:left;font-weight:600;font-size:12px}
 td{padding:7px 11px;border-bottom:1px solid var(--borda);color:var(--txt)}
 tr:hover td{background:var(--ps)}
-input[type="number"],input[type="text"],input[type="password"],input[type="color"],textarea,select{font-family:inherit;font-size:13px;padding:6px 8px;border:1px solid var(--borda);border-radius:5px;width:100%;background:var(--input-bg);color:var(--txt);transition:border-color .15s,box-shadow .15s,background .3s}
+input[type="number"],input[type="text"],input[type="password"],input[type="color"],textarea,select{font-family:inherit;font-size:13px;padding:6px 8px;border:1px solid var(--borda);border-radius:5px}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--p);box-shadow:0 0 0 2px var(--ps)}
 input[type="color"]{padding:3px;height:36px;cursor:pointer}
 input.nota{width:65px;text-align:center;font-weight:600}
@@ -433,6 +428,18 @@ body[data-tema="escuro"] .linha-selecionada td{background:rgba(74,144,217,.15)!i
         </label>
       </div>
     </div>
+
+    <div class="card">
+      <h2>🔁 Sincronizar com GitHub</h2>
+      <div class="form-grid">
+        <label>Token GitHub (PAT, scope repo)<input type="password" id="githubPat" placeholder="Personal Access Token (não armazene em local público)"></label>
+      </div>
+      <div style="margin-top:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <button class="btn" onclick="saveToGithub()">💾 Salvar no GitHub</button>
+        <button class="btn secundario" onclick="loadFromGithub()">🔄 Carregar do GitHub</button>
+        <span id="githubStatus" style="margin-left:10px;color:var(--txt2)"></span>
+      </div>
+    </div>
   </section>
 
 </main>
@@ -661,7 +668,6 @@ function atualizarTabUsuarios(){
   document.getElementById("tabUsuarios").style.display = ehAdmin() ? "" : "none";
   document.getElementById("cardNovaTurma").style.display = ehAdmin() ? "block" : "none";
 }
-
 function turmasVisiveis(){
   const u = usuarioLogado();
   if(!u) return [];
@@ -685,7 +691,6 @@ function alunosVisiveis(){
     a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' })
   );
 }
-
 function getTurma(id){ return state.turmas.find(t=>t.id===id); }
 function getUsuario(id){ return state.usuarios.find(u=>u.id===id); }
 function alunosDaTurma(id){ return state.alunos.filter(a=>a.turmaId===id); }
@@ -998,1102 +1003,57 @@ function renderUsuarios(){
       </span></td>
       <td><strong>${turmas.length}</strong> <span style="font-size:11px;color:var(--txt2);">(${alunosQtd} alunos)</span></td>
       <td style="white-space:nowrap;">
-        <button class="btn secundario mini" onclick="resetarSenha(${u.id})">🔑 Senha</button>
-        ${!ehEu ? `<button class="btn perigo mini" onclick="removerUsuario(${u.id})">🗑️</button>` : ''}
+        ${u.role !== "admin" ? `<button class="btn secundario mini" onclick="removerUsuario(${u.id})">🗑️</button>` : ''}
       </td>
     </tr>`;
-  }).join("");
+  }).join('');
 
   document.getElementById('usuariosArea').innerHTML = `
     <div class="card">
-      <h2>➕ Criar Novo Usuário</h2>
-      <div class="form-grid">
-        <label>Nome completo<input type="text" id="novoUsuarioNome" placeholder="Ex: Maria Silva"></label>
-        <label>Usuário (login)<input type="text" id="novoUsuarioLogin" placeholder="ex: maria.silva"></label>
-        <label>Senha<input type="password" id="novoUsuarioSenha" placeholder="mín. 4 caracteres"></label>
-        <label>Tipo de usuário
-          <select id="novoUsuarioRole">
-            <option value="professor">👨‍🏫 Professor</option>
-            <option value="admin">👑 Administrador</option>
-          </select>
-        </label>
-      </div>
-      <div style="margin-top:14px;">
-        <button class="btn" onclick="criarUsuario()">➕ Criar Usuário</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>👥 Usuários do Sistema</h2>
+      <h2>👤 Usuários</h2>
       <div style="overflow-x:auto;">
         <table>
-          <thead>
-            <tr><th>#</th><th>Nome</th><th>Usuário</th><th>Tipo</th><th>Turmas</th><th>Ações</th></tr>
-          </thead>
+          <thead><tr><th>#</th><th>Nome</th><th>Login</th><th>Tipo</th><th>Turmas</th><th>Ações</th></tr></thead>
           <tbody>${linhas}</tbody>
         </table>
       </div>
     </div>
-
-    <div class="card">
-      <h2>ℹ️ Como funciona</h2>
-      <ul style="font-size:13px;color:var(--txt2);line-height:1.9;padding-left:20px;">
-        <li><strong>👑 Administrador:</strong> vê todas as turmas, cria/exclui usuários, alunos e turmas</li>
-        <li><strong>👨‍🏫 Professor:</strong> vê apenas as turmas das quais é responsável (pode lançar notas)</li>
-        <li>Atribua professores em <strong>🏫 Turmas</strong> → coluna "Professor(a) Responsável"</li>
-        <li>Sessão dura <strong>${SESSION_HORAS} horas</strong>; depois é preciso logar de novo</li>
-        <li>Senhas são armazenadas com <strong>hash</strong>, nunca em texto puro</li>
-      </ul>
-    </div>
   `;
 }
 
-async function criarUsuario(){
-  const nome = document.getElementById('novoUsuarioNome').value.trim();
-  const login = document.getElementById('novoUsuarioLogin').value.trim().toLowerCase();
-  const senha = document.getElementById('novoUsuarioSenha').value;
-  const role = document.getElementById('novoUsuarioRole').value;
-
-  if(!nome){ alert("Digite o nome."); return; }
-  if(!login || login.length < 3){ alert("Usuário precisa ter 3+ caracteres."); return; }
-  if(state.usuarios.some(u=>u.login === login)){ alert("Este usuário já existe."); return; }
-  if(senha.length < 4){ alert("Senha precisa ter 4+ caracteres."); return; }
-
-  const novoId = state.usuarios.length ? Math.max(...state.usuarios.map(u=>u.id))+1 : 1;
-  const senhaHash = await hashSenha(senha);
-  state.usuarios.push({
-    id: novoId,
-    nome: capitalizarNome(nome),
-    login, senhaHash, role,
-    criadoEm: new Date().toISOString()
-  });
-  salvar();
-  renderUsuarios();
-  carregarSelectProfessorTurma();
-  alert(`✅ Usuário "${capitalizarNome(nome)}" criado!`);
-}
-
-function renomearUsuario(id, novo){
-  if(!ehAdmin()) return;
-  novo = capitalizarNome(novo);
-  if(!novo) return;
-  const u = getUsuario(id); if(!u) return;
-  u.nome = novo;
-  salvar();
-  atualizarUserBadge();
-  renderUsuarios();
-  carregarSelectProfessorTurma();
-  renderTurmas();
-}
-
-async function resetarSenha(id){
-  if(!ehAdmin()) return;
-  const u = getUsuario(id); if(!u) return;
-  const nova = prompt(`Nova senha para "${u.nome}" (mín. 4 caracteres):`);
-  if(!nova) return;
-  if(nova.length < 4){ alert("Senha curta."); return; }
-  u.senhaHash = await hashSenha(nova);
-  salvar();
-  alert(`✅ Senha de "${u.nome}" redefinida.`);
-}
-
-function removerUsuario(id){
-  if(!ehAdmin()) return;
-  const u = getUsuario(id); if(!u) return;
-  const eu = usuarioLogado();
-  if(u.id === eu.id){ alert("Você não pode remover a si mesmo."); return; }
-  const admins = state.usuarios.filter(x=>x.role === "admin");
-  if(u.role === "admin" && admins.length <= 1){
-    alert("Precisa haver ao menos um administrador."); return;
-  }
-  if(!confirm(`Remover "${u.nome}"? As turmas dele ficarão sem responsável.`)) return;
-  state.turmas.forEach(t=>{ if(t.professorId === id) t.professorId = null; });
-  state.usuarios = state.usuarios.filter(x=>x.id !== id);
-  salvar();
-  renderUsuarios();
-  renderTurmas();
-  carregarSelectTurmaAtiva();
-  carregarSelectProfessorTurma();
-}
-
-function carregarConfigUI(){
-  document.getElementById('cfgAprov').value = state.config.mediaAprov;
-  document.getElementById('cfgRecup').value = state.config.mediaRecup;
-  document.getElementById('cfgLimiteFaltas').value = state.config.limiteFaltas;
-  document.getElementById('cfgAno').value = state.config.ano;
-  document.getElementById('cfgEscola').value = state.config.escola;
-  if(state.config.corCustom) document.getElementById('corCustom').value = state.config.corCustom;
-  renderMetas();
-}
-function salvarConfig(){
-  state.config.mediaAprov = parseFloat(document.getElementById('cfgAprov').value)||5;
-  state.config.mediaRecup = parseFloat(document.getElementById('cfgRecup').value)||4;
-  state.config.limiteFaltas = parseInt(document.getElementById('cfgLimiteFaltas').value)||10;
-  state.config.ano = document.getElementById('cfgAno').value;
-  state.config.escola = document.getElementById('cfgEscola').value;
-  salvar();
-  atualizarSubInfo();
-  renderTudo();
-  alert("✅ Salvo!");
-}
-function atualizarSubInfo(){
-  const u = usuarioLogado();
-  const visiveis = turmasVisiveis();
-  const alunos = alunosVisiveis();
-  document.getElementById('subInfo').textContent =
-    `${state.config.escola} • ${state.config.ano} • ${visiveis.length} turma(s) • ${alunos.length} aluno(s)`;
-  const info = document.getElementById('infoFiltro');
-  if(info){
-    if(state.turmaAtiva === "todas"){
-      info.textContent = u.role === "admin"
-        ? `Admin: vendo todas as ${visiveis.length} turma(s)`
-        : `Vendo ${visiveis.length} turma(s) atribuída(s) a você`;
-    } else {
-      info.textContent = `Turma: ${getTurma(state.turmaAtiva)?.nome || ""}`;
-    }
-  }
-}
-
-function renderMetas(){
-  const el = document.getElementById('metaGrid');
-  el.innerHTML = DISCIPLINAS.map(d=>`
-    <div class="meta-item">
-      <span>${d}</span>
-      <input type="number" min="0" max="10" step="0.1" data-meta-disc="${d}"
-             value="${state.config.metaPorDisciplina[d] ?? state.config.mediaAprov}">
-    </div>
-  `).join("");
-}
-function salvarMetas(){
-  document.querySelectorAll('[data-meta-disc]').forEach(inp=>{
-    state.config.metaPorDisciplina[inp.dataset.metaDisc] = parseFloat(inp.value) || state.config.mediaAprov;
-  });
-  salvar();
-  renderTudo();
-  alert("✅ Metas salvas!");
-}
-
-function logAlteracao(alunoId, disciplina, campo, antes, depois){
-  const aluno = state.alunos.find(a=>a.id === alunoId);
-  if(!aluno) return;
-  const u = usuarioLogado();
-  state.historico.unshift({
-    data: new Date().toISOString(),
-    usuarioNome: u ? u.nome : "—",
-    alunoId, alunoNome: aluno.nome,
-    disciplina, campo,
-    antes: antes ?? "—", depois: depois ?? "—"
-  });
-  if(state.historico.length > 500) state.historico = state.historico.slice(0,500);
-}
-function carregarFiltrosHistorico(){
-  const selA = document.getElementById('filtroHistAluno');
-  const selD = document.getElementById('filtroHistDisc');
-  if(!selA || !selD) return;
-  selA.innerHTML = `<option value="todos">Todos os alunos</option>` +
-    alunosVisiveis().map(a=>`<option value="${a.id}">${a.nome}</option>`).join("");
-  selD.innerHTML = `<option value="todas">Todas as disciplinas</option>` +
-    DISCIPLINAS.map(d=>`<option value="${d}">${d}</option>`).join("");
-}
-function renderHistorico(){
-  const fa = document.getElementById('filtroHistAluno').value;
-  const fd = document.getElementById('filtroHistDisc').value;
-  const idsVisiveis = new Set(alunosVisiveis().map(a=>a.id));
-  let lista = state.historico.filter(h=>idsVisiveis.has(h.alunoId));
-  if(fa !== "todos") lista = lista.filter(h=>h.alunoId === parseInt(fa));
-  if(fd !== "todas") lista = lista.filter(h=>h.disciplina === fd);
-
-  const tbody = document.querySelector('#tabelaHistorico tbody');
-  if(!lista.length){
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--txt2)">Sem alterações.</td></tr>`;
-    return;
-  }
-  tbody.innerHTML = lista.map(h=>{
-    const d = new Date(h.data);
-    const dataStr = d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-    return `<tr>
-      <td style="font-size:11px;white-space:nowrap;">${dataStr}</td>
-      <td style="font-size:11px;">${h.usuarioNome||"—"}</td>
-      <td>${h.alunoNome}</td>
-      <td>${h.disciplina}</td>
-      <td><strong>${h.campo}</strong></td>
-      <td>${h.antes}</td>
-      <td>${h.depois}</td>
-    </tr>`;
-  }).join("");
-}
-function limparHistorico(){
-  if(!confirm("Apagar todo o histórico?")) return;
-  state.historico = [];
-  salvar();
-  renderHistorico();
-}
-
-function carregarFiltroDisc(){
-  const sel = document.getElementById('selFiltroDisc');
-  sel.innerHTML = `<option value="todas">Todas as disciplinas</option>` +
-    DISCIPLINAS.map(d=>`<option value="${d}">${d}</option>`).join("");
-  sel.value = state.disciplinaFiltro;
-}
-function mudarFiltroDisciplina(v){
-  state.disciplinaFiltro = v;
-  salvar();
-  renderKPIs(); renderDestaques(); renderGraficos(); renderRanking();
-}
-
-function carregarSelectAluno(){
-  const sel = document.getElementById('selAlunoLanc');
-  const visiveis = alunosVisiveis();
-  if(!sel) return;
-  sel.innerHTML = "";
-  if(!visiveis.length){
-    sel.innerHTML = `<option value="">Nenhum aluno</option>`;
-    return;
-  }
-  visiveis.forEach(a=>{
-    const opt = document.createElement('option');
-    opt.value = a.id;
-    opt.textContent = `${a.nome} — ${getTurma(a.turmaId)?.nome||"?"}`;
-    sel.appendChild(opt);
-  });
-  carregarSelectNovaTurma();
-}
-function filtrarAlunosLanc(){
-  const termo = document.getElementById('buscaAlunoLanc').value.toLowerCase().trim();
-  const sel = document.getElementById('selAlunoLanc');
-  const visiveis = alunosVisiveis();
-  sel.innerHTML = "";
-  const filtrados = termo ? visiveis.filter(a=>a.nome.toLowerCase().includes(termo)) : visiveis;
-  if(!filtrados.length){ sel.innerHTML = `<option value="">Nenhum resultado</option>`; return; }
-  filtrados.forEach(a=>{
-    const opt = document.createElement('option');
-    opt.value = a.id;
-    opt.textContent = `${a.nome} — ${getTurma(a.turmaId)?.nome||"?"}`;
-    sel.appendChild(opt);
-  });
-  renderLancamentos();
-}
-function alunoAnterior(){
-  const sel = document.getElementById('selAlunoLanc');
-  const visiveis = alunosVisiveis();
-  const atual = visiveis.findIndex(a=>a.id === parseInt(sel.value));
-  if(atual > 0){ sel.value = visiveis[atual-1].id; renderLancamentos(); }
-}
-function proximoAluno(){
-  const sel = document.getElementById('selAlunoLanc');
-  const visiveis = alunosVisiveis();
-  const atual = visiveis.findIndex(a=>a.id === parseInt(sel.value));
-  if(atual >= 0 && atual < visiveis.length-1){ sel.value = visiveis[atual+1].id; renderLancamentos(); }
-}
-
-function renderLancamentos(){
-  const alunoId = parseInt(document.getElementById('selAlunoLanc').value);
-  const tbody = document.querySelector('#tabelaLancamentos tbody');
-  const comentarios = document.getElementById('comentariosGrid');
-  tbody.innerHTML = "";
-  comentarios.innerHTML = "";
-
-  if(!alunoId){
-    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:30px;color:var(--txt2)">Selecione um aluno.</td></tr>`;
-    return;
-  }
-  const aluno = state.alunos.find(a=>a.id === alunoId);
-  if(!aluno || !possoVerTurma(aluno.turmaId)){
-    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:30px;color:var(--txt2)">Sem permissão.</td></tr>`;
-    return;
-  }
-
-  DISCIPLINAS.forEach(disc=>{
-    const nota = state.notas.find(n=>n.alunoId===alunoId && n.disciplina===disc);
-    if(!nota) return;
-    const media = mediaNota(nota);
-    const sit = situacao(media);
-    const meta = state.config.metaPorDisciplina[disc] ?? state.config.mediaAprov;
-    const bateuMeta = media !== null && media >= meta;
-
-    const b1 = nota.b1, b4 = nota.b4;
-    let seta = "";
-    if(b1 !== null && b1 !== "" && b4 !== null && b4 !== ""){
-      const dif = b4 - b1;
-      if(dif > 0.3) seta = `<span class="seta-up"> ▲</span>`;
-      else if(dif < -0.3) seta = `<span class="seta-down"> ▼</span>`;
-      else seta = `<span class="seta-flat"> ▬</span>`;
-    }
-
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><strong>${disc}</strong></td>
-      ${BIMESTRES.map(campo=>`
-        <td><input type="number" min="0" max="10" step="0.1" class="nota"
-             value="${nota[campo] ?? ''}"
-             onchange="atualizarNota(${alunoId},'${disc}','${campo}',this.value)"></td>
-      `).join("")}
-      <td style="text-align:center;white-space:nowrap;">
-        <strong style="color:${corSituacao(sit)}">${fmt(media)}</strong>${seta}
-      </td>
-      <td style="text-align:center;">
-        <span class="badge ${bateuMeta?'meta':'alerta'}" style="font-size:10px;">
-          ${meta.toFixed(1)}${bateuMeta?' ✓':' ✗'}
-        </span>
-      </td>
-      <td><span class="badge ${sit}">${textoSituacao(sit)}</span></td>
-      <td><input type="number" min="0" step="1" class="nota" style="width:55px;"
-           value="${nota.faltas ?? 0}"
-           onchange="atualizarFalta(${alunoId},'${disc}',this.value)"></td>
-      <td><input type="number" min="0" max="10" step="0.1" class="nota"
-           value="${nota.comportamento ?? ''}"
-           onchange="atualizarComportamento(${alunoId},'${disc}',this.value)"></td>
-      <td><input type="text" value="${nota.habilidade||''}" placeholder="Ex: EF07MA01"
-           style="min-width:120px;font-size:12px;"
-           onchange="atualizarHabilidade(${alunoId},'${disc}',this.value)"></td>
-    `;
-    tbody.appendChild(tr);
-  });
-
-  comentarios.innerHTML = BIMESTRES.map(b=>`
-    <label>${BIM_LABEL[b]}
-      <textarea rows="3" placeholder="Observações..."
-        onchange="atualizarComentario(${alunoId},'${b}',this.value)">${aluno.comentarios[b]||''}</textarea>
-    </label>
-  `).join("");
-}
-
-function atualizarNota(alunoId, disc, campo, valor){
-  const nota = state.notas.find(n=>n.alunoId===alunoId && n.disciplina===disc);
-  if(!nota) return;
-  let v = parseFloat(valor);
-  if(valor===""||isNaN(v)) v = null;
-  else v = Math.max(0,Math.min(10,v));
-  const antes = nota[campo];
-  nota[campo] = v;
-  logAlteracao(alunoId, disc, BIM_LABEL[campo], antes, v);
-  salvar();
-  renderLancamentos();
-  if(document.getElementById('dashboard').classList.contains('ativa')){
-    renderKPIs(); renderDestaques(); renderRanking(); renderGraficos();
-  }
-}
-function atualizarFalta(alunoId, disc, valor){
-  const nota = state.notas.find(n=>n.alunoId===alunoId && n.disciplina===disc);
-  if(!nota) return;
-  const antes = nota.faltas;
-  nota.faltas = Math.max(0, parseInt(valor)||0);
-  logAlteracao(alunoId, disc, "Faltas", antes, nota.faltas);
-  salvar();
-}
-function atualizarComportamento(alunoId, disc, valor){
-  const nota = state.notas.find(n=>n.alunoId===alunoId && n.disciplina===disc);
-  if(!nota) return;
-  let v = parseFloat(valor);
-  if(valor===""||isNaN(v)) v = null;
-  else v = Math.max(0,Math.min(10,v));
-  const antes = nota.comportamento;
-  nota.comportamento = v;
-  logAlteracao(alunoId, disc, "Comportamento", antes, v);
-  salvar();
-}
-function atualizarHabilidade(alunoId, disc, valor){
-  const nota = state.notas.find(n=>n.alunoId===alunoId && n.disciplina===disc);
-  if(!nota) return;
-  const antes = nota.habilidade;
-  nota.habilidade = valor;
-  logAlteracao(alunoId, disc, "BNCC", antes, valor);
-  salvar();
-}
-function atualizarComentario(alunoId, bim, valor){
-  const aluno = state.alunos.find(a=>a.id===alunoId);
-  if(!aluno) return;
-  const antes = aluno.comentarios[bim];
-  aluno.comentarios[bim] = valor;
-  logAlteracao(alunoId, "—", "Comentário "+BIM_LABEL[bim], antes, valor);
-  salvar();
-}
-
-function adicionarAluno(){
-  const inputNome = document.getElementById('novoAlunoNome');
-  const selTurma = document.getElementById('novoAlunoTurma');
-  const nome = capitalizarNome(inputNome.value);
-  const turmaId = parseInt(selTurma.value);
-  if(!nome){ alert("Digite o nome."); return; }
-  if(!turmaId || !getTurma(turmaId)){ alert("Selecione turma."); return; }
-  if(!possoVerTurma(turmaId)){ alert("Sem permissão."); return; }
-
-  const novoId = state.alunos.length ? Math.max(...state.alunos.map(a=>a.id))+1 : 1;
-  state.alunos.push({id:novoId, nome, turmaId, comentarios:{b1:"",b2:"",b3:"",b4:""}});
-  DISCIPLINAS.forEach(disc=>{
-    state.notas.push({alunoId:novoId, disciplina:disc,
-      b1:null,b2:null,b3:null,b4:null,faltas:0,comportamento:null,habilidade:""});
-  });
-  inputNome.value = "";
-  salvar();
-  carregarSelectTurmaAtiva(); carregarSelectAluno(); carregarFiltrosHistorico();
-  renderTudo();
-}
-
-function toggleImportar(){
-  const area = document.getElementById('importarArea');
-  area.style.display = area.style.display === 'none' ? 'block' : 'none';
-  if(area.style.display === 'block') carregarSelectNovaTurma();
-}
-
-function importarAlunos(){
-  const texto = document.getElementById('importarNomes').value;
-  const turmaId = parseInt(document.getElementById('importarTurma').value);
-  if(!turmaId || !getTurma(turmaId)){ alert("Selecione uma turma."); return; }
-  if(!possoVerTurma(turmaId)){ alert("Sem permissão."); return; }
-
-  const linhas = texto.split('\n')
-    .map(l => l.trim())
-    .filter(l => l.length > 0);
-
-  if(!linhas.length){ alert("Cole pelo menos um nome."); return; }
-
-  let inseridos = 0, ignorados = 0;
-  linhas.forEach(nomeOriginal=>{
-    const nome = capitalizarNome(nomeOriginal);
-    if(!nome) return;
-    if(state.alunos.some(a => a.turmaId === turmaId &&
-        a.nome.toLowerCase() === nome.toLowerCase())){ ignorados++; return; }
-    const novoId = state.alunos.length ? Math.max(...state.alunos.map(a=>a.id))+1 : 1;
-    state.alunos.push({id:novoId, nome, turmaId,
-      comentarios:{b1:"",b2:"",b3:"",b4:""}});
-    DISCIPLINAS.forEach(disc=>{
-      state.notas.push({alunoId:novoId, disciplina:disc,
-        b1:null,b2:null,b3:null,b4:null,faltas:0,comportamento:null,habilidade:""});
-    });
-    inseridos++;
-  });
-
-  salvar();
-  document.getElementById('importarNomes').value = "";
-  toggleImportar();
-  carregarSelectTurmaAtiva();
-  carregarSelectAluno();
-  carregarFiltrosHistorico();
-  renderTudo();
-  alert(`✅ ${inseridos} aluno(s) importado(s) para "${getTurma(turmaId).nome}".`
-    + (ignorados ? `\n⚠️ ${ignorados} nome(s) duplicado(s) ignorado(s).` : ""));
-}
-
-function renomearAluno(id, novo){
-  novo = capitalizarNome(novo);
-  if(!novo) return;
-  const a = state.alunos.find(x=>x.id===id); if(!a) return;
-  if(!possoVerTurma(a.turmaId)){ alert("Sem permissão."); return; }
-  a.nome = novo;
-  salvar();
-  carregarSelectAluno(); carregarFiltrosHistorico(); renderTudo();
-}
-function moverAluno(id, novaTurmaId){
-  const a = state.alunos.find(x=>x.id===id); if(!a) return;
-  if(!possoVerTurma(a.turmaId) || !possoVerTurma(parseInt(novaTurmaId))){
-    alert("Sem permissão."); return;
-  }
-  a.turmaId = parseInt(novaTurmaId);
-  salvar(); carregarSelectTurmaAtiva(); renderTudo();
-}
-function removerAluno(id){
-  if(!ehAdmin()){ alert("🔒 Apenas administradores podem excluir alunos."); return; }
-  const a = state.alunos.find(x => x.id === id);
-  if(!a) return;
-  if(!confirm(`Excluir o aluno "${a.nome}"?\n\nTodas as notas e comentários dele serão apagados.`)) return;
-  state.alunos = state.alunos.filter(x => x.id !== id);
-  state.notas = state.notas.filter(n => n.alunoId !== id);
-  alunosSelecionados.delete(id);
-  salvar();
-  carregarSelectTurmaAtiva();
-  carregarSelectAluno();
-  carregarFiltrosHistorico();
-  renderTudo();
-}
-
-function toggleSelecaoAluno(id){
-  if(alunosSelecionados.has(id)) alunosSelecionados.delete(id);
-  else alunosSelecionados.add(id);
-  renderAlunos();
-}
-
-function toggleSelecionarTodos(checked){
-  const termo = (document.getElementById('buscaAluno')?.value || "").toLowerCase().trim();
-  const visiveis = alunosVisiveis().filter(a => !termo || a.nome.toLowerCase().includes(termo));
-  if(checked) visiveis.forEach(a => alunosSelecionados.add(a.id));
-  else visiveis.forEach(a => alunosSelecionados.delete(a.id));
-  renderAlunos();
-}
-
-function excluirSelecionados(){
-  if(!ehAdmin()){ alert("🔒 Apenas administradores podem excluir alunos."); return; }
-  if(!alunosSelecionados.size){ alert("Nenhum aluno selecionado."); return; }
-  const qtd = alunosSelecionados.size;
-  if(!confirm(`Excluir ${qtd} aluno(s) selecionado(s)?\n\nTodas as notas e comentários serão apagados.\nEsta ação não pode ser desfeita.`)) return;
-  state.alunos = state.alunos.filter(a => !alunosSelecionados.has(a.id));
-  state.notas = state.notas.filter(n => !alunosSelecionados.has(n.alunoId));
-  alunosSelecionados.clear();
-  salvar();
-  carregarSelectTurmaAtiva();
-  carregarSelectAluno();
-  carregarFiltrosHistorico();
-  renderTudo();
-  alert(`✅ ${qtd} aluno(s) excluído(s).`);
-}
-
-function excluirTodosDaTurma(turmaId){
-  if(!ehAdmin()){ alert("🔒 Apenas administradores podem excluir alunos."); return; }
-  const t = getTurma(turmaId); if(!t) return;
-  const alunos = alunosDaTurma(turmaId);
-  if(!alunos.length){ alert(`A turma "${t.nome}" já está vazia.`); return; }
-  if(!confirm(`⚠️ Excluir TODOS os ${alunos.length} aluno(s) da turma "${t.nome}"?\n\nTodas as notas e comentários serão apagados.\nEsta ação não pode ser desfeita.`)) return;
-  const ids = new Set(alunos.map(a => a.id));
-  state.alunos = state.alunos.filter(a => !ids.has(a.id));
-  state.notas  = state.notas.filter(n => !ids.has(n.alunoId));
-  ids.forEach(id => alunosSelecionados.delete(id));
-  salvar();
-  carregarSelectTurmaAtiva();
-  carregarSelectAluno();
-  carregarFiltrosHistorico();
-  renderTudo();
-  alert(`✅ ${alunos.length} aluno(s) excluído(s) da turma "${t.nome}".`);
-}
-
-function verLancamentos(alunoId){
-  document.querySelector("nav button[data-tab='lancamentos']").click();
-  document.getElementById('buscaAlunoLanc').value = "";
-  carregarSelectAluno();
-  document.getElementById('selAlunoLanc').value = alunoId;
-  renderLancamentos();
-}
-function renderAlunos(){
-  const termo = (document.getElementById('buscaAluno')?.value || "").toLowerCase().trim();
-  const visiveis = alunosVisiveis().filter(a => !termo || a.nome.toLowerCase().includes(termo));
-  const tbody = document.querySelector('#tabelaAlunos tbody');
-  const admin = ehAdmin();
-
-  const barra = document.getElementById('barraAcoesAlunos');
-  if(barra){
-    if(admin){
-      barra.style.display = 'flex';
-      barra.innerHTML = `
-        <button class="btn" onclick="excluirSelecionados()"
-                style="background:#d9534f;">
-          🗑️ Excluir selecionados (${alunosSelecionados.size})
-        </button>
-        <button class="btn secundario" onclick="alunosSelecionados.clear(); renderAlunos();">
-          Limpar seleção
-        </button>
-      `;
-    } else {
-      barra.style.display = 'none';
-    }
-  }
-
-  if(!visiveis.length){
-    tbody.innerHTML = `<tr><td colspan="${admin ? 8 : 7}" style="text-align:center;padding:30px;color:var(--txt2)">
-      ${state.alunos.length === 0
-        ? 'Nenhum aluno cadastrado ainda. Use o formulário acima para adicionar.'
-        : 'Nenhum aluno encontrado.'}</td></tr>`;
-    return;
-  }
-
-  const turmasDisp = turmasVisiveis();
-  const todosMarcados = visiveis.every(a => alunosSelecionados.has(a.id));
-
-  tbody.innerHTML = visiveis.map((a,i)=>{
-    const media = mediaAluno(a.id);
-    const sit = situacao(media);
-    const faltas = totalFaltasAluno(a.id);
-    const alertaFalta = faltas > state.config.limiteFaltas;
-    const marcado = alunosSelecionados.has(a.id);
-    return `<tr class="${alertaFalta ? 'linha-alerta' : ''} ${marcado ? 'linha-selecionada' : ''}">
-      ${admin ? `<td style="text-align:center;">
-        <input type="checkbox" style="width:18px;height:18px;cursor:pointer;"
-               ${marcado ? 'checked' : ''}
-               onchange="toggleSelecaoAluno(${a.id})">
-      </td>` : ''}
-      <td>${i+1}</td>
-      <td>
-        ${admin
-          ? `<input type="text" value="${a.nome}" onchange="renomearAluno(${a.id},this.value)">`
-          : `<strong>${a.nome}</strong>`}
-      </td>
-      <td>
-        ${admin
-          ? `<select onchange="moverAluno(${a.id},this.value)">
-               ${turmasDisp.map(t=>`<option value="${t.id}" ${t.id===a.turmaId?'selected':''}>${t.nome}</option>`).join("")}
-             </select>`
-          : getTurma(a.turmaId)?.nome || "—"}
-      </td>
-      <td><strong>${fmt(media)}</strong></td>
-      <td>${alertaFalta?`<span class="badge alerta">⚠️ ${faltas}</span>`:faltas}</td>
-      <td><span class="badge ${sit}">${textoSituacao(sit)}</span></td>
-      <td style="white-space:nowrap;">
-        <button class="btn secundario mini" onclick="verLancamentos(${a.id})">📝</button>
-        <button class="btn mini" onclick="abrirBoletim(${a.id})">📄</button>
-        ${admin ? `<button class="btn perigo mini" onclick="removerAluno(${a.id})">🗑️</button>` : ''}
-      </td>
-    </tr>`;
-  }).join("");
-
-  const thead = document.querySelector('#tabelaAlunos thead tr');
-  if(admin){
-    if(!thead.querySelector('.col-check')){
-      const thCheck = document.createElement('th');
-      thCheck.className = 'col-check';
-      thCheck.style.textAlign = 'center';
-      thCheck.style.width = '40px';
-      thCheck.innerHTML = `<input type="checkbox" id="checkTodos" style="width:16px;height:16px;cursor:pointer;"
-        onchange="toggleSelecionarTodos(this.checked)">`;
-      thead.insertBefore(thCheck, thead.firstChild);
-    }
-    const ct = document.getElementById('checkTodos');
-    if(ct) ct.checked = todosMarcados && visiveis.length > 0;
-  } else {
-    const th = thead.querySelector('.col-check');
-    if(th) th.remove();
-  }
-}
-
-function renderKPIs(){
-  const visiveis = alunosVisiveis();
-  const medias = visiveis.map(a=>mediaAluno(a.id)).filter(m=>m!==null);
-  const mediaTurma = medias.length ? medias.reduce((s,m)=>s+m,0)/medias.length : 0;
-
-  const sit = visiveis.map(a=>situacao(mediaAluno(a.id)));
-  const total = sit.length || 1;
-  const aprov = sit.filter(s=>s === "aprovado").length;
-  const recup = sit.filter(s=>s === "recuperacao").length;
-  const reprov = sit.filter(s=>s === "reprovado").length;
-  const alertaFaltas = visiveis.filter(a=>totalFaltasAluno(a.id) > state.config.limiteFaltas).length;
-
-  const u = usuarioLogado();
-  const rotulo = state.turmaAtiva === "todas"
-    ? (u && u.role === "admin" ? "Todas as Turmas" : "Minhas Turmas")
-    : (getTurma(state.turmaAtiva)?.nome || "");
-
-  document.getElementById('kpis').innerHTML = `
-    <div class="kpi azul-claro">
-      <div class="label">${rotulo}</div>
-      <div class="valor">${medias.length ? mediaTurma.toFixed(1) : '—'}</div>
-      <div class="extra">${visiveis.length} aluno(s)</div>
-    </div>
-    <div class="kpi verde">
-      <div class="label">Aprovados</div>
-      <div class="valor">${aprov}</div>
-      <div class="extra">${((aprov/total)*100).toFixed(0)}%</div>
-    </div>
-    <div class="kpi amarelo">
-      <div class="label">Recuperação</div>
-      <div class="valor">${recup}</div>
-      <div class="extra">${((recup/total)*100).toFixed(0)}%</div>
-    </div>
-    <div class="kpi vermelho">
-      <div class="label">Reprovados</div>
-      <div class="valor">${reprov}</div>
-      <div class="extra">${((reprov/total)*100).toFixed(0)}%</div>
-    </div>
-    <div class="kpi">
-      <div class="label">Faltas acima do limite</div>
-      <div class="valor">${alertaFaltas}</div>
-      <div class="extra">Limite: ${state.config.limiteFaltas}</div>
-    </div>
-  `;
-}
-
-function renderDestaques(){
-  const visiveis = alunosVisiveis();
-  if(!visiveis.length){
-    document.getElementById('destaques').innerHTML = "";
-    return;
-  }
-
-  let melhorAluno = null;
-  let melhorMedia = -1;
-  let alunoEmCrescimento = null;
-  let maiorCrescimento = -Infinity;
-
-  visiveis.forEach(a => {
-    const media = mediaAluno(a.id);
-    if(media !== null && media > melhorMedia){
-      melhorMedia = media;
-      melhorAluno = a;
-    }
-
-    const notas = state.notas.filter(n => n.alunoId === a.id);
-    const valores = notas.map(n => mediaNota(n)).filter(v => v !== null);
-    if(valores.length >= 2){
-      const inicio = valores[0];
-      const fim = valores[valores.length - 1];
-      const diff = fim - inicio;
-      if(diff > maiorCrescimento){
-        maiorCrescimento = diff;
-        alunoEmCrescimento = a;
-      }
-    }
-  });
-
-  const disciplinaTop = DISCIPLINAS.map(d => ({
-    nome: d,
-    media: mediaDisciplina(d, visiveis)
-  })).filter(x => x.media !== null).sort((a,b) => b.media - a.media)[0];
-
-  document.getElementById('destaques').innerHTML = `
-    <div class="destaque">
-      <div class="icone">🏅</div>
-      <div>
-        <div class="titulo">Melhor aluno</div>
-        <div class="nome">${melhorAluno ? melhorAluno.nome : '—'}</div>
-        <div class="detalhe">Média ${melhorMedia !== -1 ? melhorMedia.toFixed(1) : '—'}</div>
-      </div>
-    </div>
-    <div class="destaque">
-      <div class="icone">📈</div>
-      <div>
-        <div class="titulo">Mais evolução</div>
-        <div class="nome">${alunoEmCrescimento ? alunoEmCrescimento.nome : '—'}</div>
-        <div class="detalhe">+${(maiorCrescimento===-Infinity ? 0 : maiorCrescimento).toFixed(1)} pts</div>
-      </div>
-    </div>
-    <div class="destaque">
-      <div class="icone">🎯</div>
-      <div>
-        <div class="titulo">Disciplina forte</div>
-        <div class="nome">${disciplinaTop ? disciplinaTop.nome : '—'}</div>
-        <div class="detalhe">Média ${disciplinaTop ? disciplinaTop.media.toFixed(1) : '—'}</div>
-      </div>
-    </div>
-  `;
-}
-
-function renderRanking(){
-  const visiveis = alunosVisiveis();
-  const tbody = document.querySelector('#tabelaRanking tbody');
-  if(!visiveis.length){
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--txt2)">Sem alunos.</td></tr>`;
-    return;
-  }
-
-  const dados = visiveis.map(a => ({
-    id: a.id,
-    nome: a.nome,
-    turma: getTurma(a.turmaId)?.nome || '—',
-    media: mediaAluno(a.id),
-    meta: state.config.mediaAprov,
-    situacao: situacao(mediaAluno(a.id))
-  })).filter(d => d.media !== null).sort((a,b) => b.media - a.media);
-
-  tbody.innerHTML = dados.map((d, i) => `
-    <tr>
-      <td>${i + 1}</td>
-      <td>${d.nome}</td>
-      <td>${d.turma}</td>
-      <td><strong>${fmt(d.media)}</strong></td>
-      <td>${d.meta.toFixed(1)}</td>
-      <td><span class="badge ${d.situacao}">${textoSituacao(d.situacao)}</span></td>
-    </tr>
-  `).join("");
-}
-
-function renderGraficos(){
-  const visiveis = alunosVisiveis();
-  const txtCor = cssVar("--txt");
-  const txt2Cor = cssVar("--txt2");
-  const primaria = cssVar("--p");
-  const gridCor = cssVar("--borda");
-
-  if(charts.chartAlunos) charts.chartAlunos.destroy();
-  if(charts.chartDisciplinas) charts.chartDisciplinas.destroy();
-  if(charts.chartSituacao) charts.chartSituacao.destroy();
-  if(charts.chartEvolucao) charts.chartEvolucao.destroy();
-  if(charts.chartComparativo) charts.chartComparativo.destroy();
-
-  const ctxAlunos = document.getElementById('chartAlunos');
-  if(ctxAlunos){
-    const labels = visiveis.map(a => a.nome.slice(0, 12));
-    const dados = visiveis.map(a => mediaAluno(a.id) ?? 0);
-    charts.chartAlunos = new Chart(ctxAlunos, {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: [{
-          label: 'Média',
-          data: dados,
-          backgroundColor: hexToRGBA(primaria, 0.85),
-          borderRadius: 6
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: { min: 0, max: 10, grid: { color: gridCor }, ticks: { color: txt2Cor } },
-          x: { ticks: { color: txt2Cor } }
-        },
-        plugins: { legend: { display: false } }
-      }
-    });
-  }
-
-  const ctxDisc = document.getElementById('chartDisciplinas');
-  if(ctxDisc){
-    const labels = DISCIPLINAS.map(d => d);
-    const vals = labels.map(d => mediaDisciplina(d, visiveis) ?? 0);
-    charts.chartDisciplinas = new Chart(ctxDisc, {
-      type: 'radar',
-      data: {
-        labels,
-        datasets: [{
-          label: 'Médias',
-          data: vals,
-          backgroundColor: hexToRGBA(primaria, 0.2),
-          borderColor: primaria,
-          pointBackgroundColor: primaria
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          r: { min: 0, max: 10, grid: { color: gridCor }, angleLines: { color: gridCor }, pointLabels: { color: txt2Cor } }
-        },
-        plugins: { legend: { display: false } }
-      }
-    });
-  }
-
-  const ctxSituacao = document.getElementById('chartSituacao');
-  if(ctxSituacao){
-    const aprov = visiveis.filter(a => situacao(mediaAluno(a.id)) === 'aprovado').length;
-    const rec = visiveis.filter(a => situacao(mediaAluno(a.id)) === 'recuperacao').length;
-    const rep = visiveis.filter(a => situacao(mediaAluno(a.id)) === 'reprovado').length;
-    charts.chartSituacao = new Chart(ctxSituacao, {
-      type: 'doughnut',
-      data: {
-        labels: ['Aprovado', 'Recuperação', 'Reprovado'],
-        datasets: [{
-          data: [aprov, rec, rep],
-          backgroundColor: ['#2fa84f', '#d99a00', '#d9534f']
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: txt2Cor } } }
-      }
-    });
-  }
-
-  const ctxEvolucao = document.getElementById('chartEvolucao');
-  if(ctxEvolucao){
-    charts.chartEvolucao = new Chart(ctxEvolucao, {
-      type: 'line',
-      data: {
-        labels: ['1º', '2º', '3º', '4º'],
-        datasets: [{
-          label: 'Média da turma',
-          data: BIMESTRES.map(b => mediaBimestre(b, visiveis) ?? 0),
-          borderColor: primaria,
-          backgroundColor: hexToRGBA(primaria, 0.15),
-          tension: 0.35,
-          fill: true
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: { min: 0, max: 10, grid: { color: gridCor }, ticks: { color: txt2Cor } },
-          x: { ticks: { color: txt2Cor } }
-        },
-        plugins: { legend: { labels: { color: txt2Cor } } }
-      }
-    });
-  }
-
-  const cardComp = document.getElementById('cardComparativo');
-  const visiveisTurmas = turmasVisiveis();
-  if(state.turmaAtiva === 'todas' && visiveisTurmas.length > 1 && document.getElementById('chartComparativo')){
-    cardComp.style.display = 'block';
-    const ctxComp = document.getElementById('chartComparativo');
-    charts.chartComparativo = new Chart(ctxComp, {
-      type: 'bar',
-      data: {
-        labels: visiveisTurmas.map(t => t.nome),
-        datasets: [{
-          label: 'Média',
-          data: visiveisTurmas.map(t => {
-            const alunosT = alunosDaTurma(t.id);
-            const medias = alunosT.map(a => mediaAluno(a.id)).filter(m => m !== null);
-            if(!medias.length) return 0;
-            return medias.reduce((s,m) => s + m, 0) / medias.length;
-          }),
-          backgroundColor: visiveisTurmas.map((_, idx) => idx % 2 ? hexToRGBA(primaria, 0.7) : hexToRGBA('#2fa84f', 0.7))
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: { min: 0, max: 10, grid: { color: gridCor }, ticks: { color: txt2Cor } },
-          x: { ticks: { color: txt2Cor } }
-        },
-        plugins: { legend: { display: false } }
-      }
-    });
-  } else if(cardComp) {
-    cardComp.style.display = 'none';
-  }
-}
-
-function exportarCSV(){
-  let csv = 'Aluno;Turma;Disciplina;1 Bim;2 Bim;3 Bim;4 Bim;Media;Situacao;Faltas;Comportamento;BNCC\n';
-  alunosVisiveis().forEach(a => {
-    state.notas.filter(n => n.alunoId === a.id).forEach(n => {
-      csv += [
-        a.nome,
-        getTurma(a.turmaId)?.nome || '',
-        n.disciplina,
-        n.b1 ?? '',
-        n.b2 ?? '',
-        n.b3 ?? '',
-        n.b4 ?? '',
-        mediaNota(n) ?? '',
-        textoSituacao(situacao(mediaNota(n))),
-        n.faltas ?? 0,
-        n.comportamento ?? '',
-        n.habilidade || ''
-      ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(';') + '\n';
-    });
-  });
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'desempenho_escolar.csv';
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-function abrirBoletim(alunoId){
-  const a = state.alunos.find(x=>x.id===alunoId); if(!a || !possoVerTurma(a.turmaId)){ alert('Sem permissão.'); return; }
-  const turma = getTurma(a.turmaId)?.nome || '—';
-  const notas = state.notas.filter(n => n.alunoId === alunoId);
-  const mediaGeral = mediaAluno(alunoId);
-  const totalFaltas = totalFaltasAluno(alunoId);
-  document.getElementById('printArea').innerHTML = `
-    <div id="boletimConteudo" style="padding:0;">
-      <div class="boletim-header">
-        <div>
-          <h2>${state.config.escola}</h2>
-          <div style="font-size:12px;color:var(--txt2);margin-top:4px;">Ano letivo: ${state.config.ano}</div>
-        </div>
-        <div class="info-escola">
-          <div>Boletim Individual</div>
-          <div>Turma: ${turma}</div>
-        </div>
-      </div>
-      <div class="boletim-aluno">
-        <div class="campo"><strong>Aluno</strong><span>${a.nome}</span></div>
-        <div class="campo"><strong>Turma</strong><span>${turma}</span></div>
-        <div class="campo"><strong>Média Geral</strong><span>${fmt(mediaGeral)}</span></div>
-        <div class="campo"><strong>Faltas</strong><span>${totalFaltas}</span></div>
-      </div>
-      <div class="boletim-resumo">
-        <div class="item"><strong>${notas.filter(n => situacao(mediaNota(n)) === 'aprovado').length}</strong><span>Aprovados</span></div>
-        <div class="item"><strong>${notas.filter(n => situacao(mediaNota(n)) === 'recuperacao').length}</strong><span>Rec.</span></div>
-        <div class="item"><strong>${notas.filter(n => situacao(mediaNota(n)) === 'reprovado').length}</strong><span>Reprov.</span></div>
-      </div>
-      <table class="boletim-tabela">
-        <thead>
-          <tr><th>Disciplina</th>${BIMESTRES.map(b => `<th>${BIM_LABEL[b]}</th>`).join('')}<th>Média</th><th>Situação</th></tr>
-        </thead>
-        <tbody>
-          ${notas.map(n => {
-            const media = mediaNota(n);
-            const sit = situacao(media);
-            return `<tr>
-              <td>${n.disciplina}</td>
-              ${BIMESTRES.map(b => `<td>${n[b] ?? '—'}</td>`).join('')}
-              <td>${fmt(media)}</td>
-              <td><span class="badge ${sit}">${textoSituacao(sit)}</span></td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>
-      <div class="boletim-rodape">
-        <div class="bloco">
-          <strong>Observações</strong>
-          ${BIMESTRES.map(b => `<div><strong>${BIM_LABEL[b]}:</strong> ${a.comentarios[b] || '—'}</div>`).join('')}
-        </div>
-        <div class="bloco">
-          <strong>Assinaturas</strong>
-          <div>Professor(a): _______________________</div>
-          <div>Diretoria: _________________________</div>
-          <div>Responsável: _______________________</div>
-        </div>
-      </div>
-    </div>
-  `;
-  document.getElementById('modalBoletim').classList.add('aberto');
-}
-function fecharBoletim(){ document.getElementById('modalBoletim').classList.remove('aberto'); }
-
-function montarTemas(){
-  const html = TEMAS.map(t => `<div class="tema-swatch ${t.id===state.tema?'ativo':''}" style="background:${t.cor};" title="${t.nome}" data-tema-id="${t.id}" onclick="mudarTema('${t.id}')"></div>`).join("");
-  document.getElementById('temaSelector').innerHTML = html;
-  document.getElementById('temaSelectorConfig').innerHTML = html;
-  atualizarSwatches();
-}
-function atualizarSwatches(){
-  document.querySelectorAll('.tema-swatch').forEach(el => el.classList.toggle('ativo', el.dataset.temaId === state.tema));
-}
-function aplicarTema(id){
-  state.tema = id;
-  document.body.setAttribute('data-tema', id);
-  atualizarSwatches();
-  if(Object.keys(charts).length) setTimeout(renderGraficos, 50);
-}
-function mudarTema(id){ aplicarTema(id); salvar(); }
-function aplicarCorCustom(cor){ state.config.corCustom = cor; salvar(); }
-function limparCorCustom(){ state.config.corCustom = null; document.getElementById('corCustom').value = '#1f4e78'; salvar(); }
-
-function renderTudo(){
-  carregarSelectProfessorTurma();
-  renderKPIs();
-  renderDestaques();
-  renderRanking();
-  renderLancamentos();
-  renderAlunos();
-  renderTurmas();
-  carregarSelectNovaTurma();
-  if(document.getElementById('dashboard').classList.contains('ativa')) renderGraficos();
-}
-
-function init(){
+function carregarEstadoInicial(){
   const salvo = localStorage.getItem(STORAGE_KEY);
   if(salvo){
-    try{ state = JSON.parse(salvo); }catch(e){ gerarDadosIniciais(); }
-  } else {
-    gerarDadosIniciais();
-  }
-  garantir();
-
-  const sSalva = localStorage.getItem(SESSION_KEY);
-  if(sSalva){
     try{
-      const s = JSON.parse(sSalva);
-      const exp = s.expira || 0;
-      const user = state.usuarios.find(u=>u.id===s.userId);
-      if(user && Date.now() < exp) sessao = { userId: s.userId };
-      else localStorage.removeItem(SESSION_KEY);
-    }catch(e){}
+      state = JSON.parse(salvo);
+      garantir();
+    }catch(e){
+      console.warn('Backup local inválido, resetando...', e);
+      state = { ...state };
+      salvar();
+    }
+  } else {
+    // inicializa vazio, mas mantém aplicação funcional
+    state = { ...state };
+    garantir();
+    salvar();
   }
-
-  if(!state.usuarios.length){ mostrarTelaSetup(); return; }
-  if(!sessao){ mostrarTelaLogin(); return; }
-  entrarNoApp();
 }
 
-window.addEventListener('DOMContentLoaded', init);
-document.getElementById('modalBoletim').addEventListener('click', e=>{ if(e.target.id === 'modalBoletim') fecharBoletim(); });
+function iniciar(){
+  carregarEstadoInicial();
+  const sess = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+  if(sess && sess.expira && Date.now() < sess.expira){
+    sessao = { userId: sess.userId };
+    entrarNoApp();
+  } else {
+    mostrarTelaLogin();
+  }
+}
+
+window.addEventListener('DOMContentLoaded', iniciar);
 </script>
+
+<script src="./integral-github-sync.js"></script>
 </body>
 </html>
